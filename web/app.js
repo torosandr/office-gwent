@@ -27,7 +27,9 @@ async function api(path, body) {
     const response = await fetch(path, {method:body ? 'POST' : 'GET', headers:{'Content-Type':'application/json', ...(token ? {Authorization:`Bearer ${token}`} : {})}, body:body ? JSON.stringify(body) : undefined, signal:controller.signal});
     const result = await response.json();
     if (!response.ok) { const error = new Error(result.error || 'Не удалось выполнить действие.'); error.status = response.status; throw error; }
-    setConnection(true); return {...result, _seq:seq};
+    setConnection(true);
+    if (Array.isArray(result)) return result; // массивы (напр. rating) не оборачиваем
+    return {...result, _seq:seq};
   } catch (error) {
     if (!error.status) { setConnection(false); error.message = 'Связь с сервером потеряна. Партия сохранена — попробуйте ещё раз.'; }
     throw error;
