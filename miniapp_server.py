@@ -25,7 +25,7 @@ def local_ips():
     return [a for a in ip if not a.startswith('127.')]
 
 
-def make_server(service, host='0.0.0.0', port=8765):
+def make_server(service, host='0.0.0.0', port=8765, bot=None):
     allowed_ips = local_ips()
 
     class Handler(BaseHTTPRequestHandler):
@@ -81,6 +81,10 @@ def make_server(service, host='0.0.0.0', port=8765):
                     return self.respond(200, service.cards_catalog(self.uid()))
                 if path == '/api/deck-candidates':
                     return self.respond(200, service.deck_candidates(self.uid()))
+                if path == '/health':
+                    return self.respond(200, {'ok': True})
+                if path == '/telegram-health':
+                    return self.respond(200, {'ok': bool(bot)})
                 files = {'/': ('index.html', 'text/html; charset=utf-8'),
                          '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
                          '/style.css': ('style.css', 'text/css; charset=utf-8')}
@@ -95,6 +99,18 @@ def make_server(service, host='0.0.0.0', port=8765):
 
         def do_POST(self):
             try:
+                path = urlsplit(self.path).path
+                # Webhook Telegram: не проверяем Origin (Telegram не шлёт его).
+                if path == '/telegram':
+                    length = int(self.headers.get('Content-Length', '0'))
+                    if length <= 0 or length > 262144:
+                        raise WebError('Недопустимый размер запроса.', 413)
+                    body = json.loads(self.rfile.read(length))
+                    if bot is not None:
+                        bot.handle_telegram(body)
+                    return self.respond(200, {'ok': True})
+                if path == '/telegram-health':
+                    return self.respond(200, {'ok': bool(bot)})
                 self.check_origin()
                 length = int(self.headers.get('Content-Length', '0'))
                 if length <= 0 or length > 16384:
@@ -102,7 +118,6 @@ def make_server(service, host='0.0.0.0', port=8765):
                 body = json.loads(self.rfile.read(length))
                 if not isinstance(body, dict):
                     raise WebError('Некорректный запрос.')
-                path = urlsplit(self.path).path
                 if path in ('/api/auth/local', '/api/auth/telegram'):
                     result = service.authenticate(body, telegram=path.endswith('telegram'))
                 elif path == '/api/buy':
@@ -136,19 +151,27 @@ def main():
     parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', '8765')))
     parser.add_argument('--database', default=str(ROOT / 'miniapp.sqlite3'))
     args = parser.parse_args()
-    if not args.local:
-        # производственный вход — токен бота обязателен из окружения
-        token = (os.environ.get('TELEGRAM_BOT_TOKEN') or '').strip()
-        if token:
-            os.environ['TELEGRAM_BOT_TOKEN'] = token
-        else:
-            public = os.environ.get('MINIAPP_PUBLIC_URL', '')
-            raise SystemExit('TELEGRAM_BOT_TOKEN не задан. Укажите токен бота в переменных окружения.')
-    token = os.environ.get('TELEGRAM_BOT_TOKEN', getattr(config, 'TOKEN', getattr(config, 'BOT_TOKEN', '')))
+    token = (os.environ.get('TELEGRAM_BOT_TOKEN') or getattr(config, 'TOKEN', '') or '').strip()
+    if not args.local and not token:
+        raise SystemExit('TELEGRAM_BOT_TOKEN не задан. Укажите токен бота в переменных окружения.')
     service = Service(args.database, local=args.local, bot_token='' if args.local else token,
                       profiles_path=ROOT / config.FILES['users'])
-    server = make_server(service, port=args.port)
+    # Текстовый бот (webhook) живёт в том же процессе, если есть токен и включён.
+    bot = None
+    if not args.local:
+        try:
+            from bot_runtime import build_bot_runtime
+            bot = build_bot_runtime()
+        except Exception as error:
+            print('webhook bot disabled:', error, file=sys.stderr)
+    server = make_server(service, port=args.port, bot=bot)
     print(f'Office Gwent: http://0.0.0.0:{args.port}', flush=True)
+    # Прописываем webhook текстового бота, если известен публичный URL.
+    if bot is not None:
+        public = os.environ.get('MINIAPP_PUBLIC_URL', '').rstrip('/')
+        if public:
+            ok, desc = bot.set_webhook(f'{public}/telegram')
+            print(f'Webhook: {"OK" if ok else desc}', flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
