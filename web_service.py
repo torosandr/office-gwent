@@ -205,15 +205,31 @@ class Service:
         db.execute('UPDATE users SET profile=? WHERE uid=?', (json.dumps(clean, ensure_ascii=False), uid))
 
     def menu(self, uid):
-        """Сводка для внеигрового меню: монеты, колода, доступные карты."""
+        """Сводка для внеигрового меню: имя, монеты, колода, доступные карты."""
         with self.connect() as db:
-            profile = self._profile_json(db, uid)
+            row = db.execute('SELECT name, profile FROM users WHERE uid=?', (uid,)).fetchone()
+            profile = json.loads(row['profile'])
         return {
+            'name': row['name'],
             'coins': profile.get('coins', 0),
             'wins': profile.get('wins', 0),
             'deck': profile.get('deck', []),
             'collection': profile.get('collection', {}),
         }
+
+    def rating(self):
+        """Список игроков по победам (для вкладки «Рейтинг»)."""
+        with self.connect() as db:
+            rows = db.execute('SELECT uid, name, profile FROM users').fetchall()
+        items = []
+        for row in rows:
+            prof = json.loads(row['profile'])
+            if not row['name']:
+                continue
+            items.append({'name': row['name'], 'wins': prof.get('wins', 0),
+                          'coins': prof.get('coins', 0)})
+        items.sort(key=lambda x: (-x['wins'], -x['coins'], x['name']))
+        return items
 
     def cards_catalog(self, uid):
         """Все карты игры с пометкой легендарности и наличия в коллекции."""

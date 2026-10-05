@@ -68,6 +68,12 @@ async function mutate(path, data={}) {
 function localLink() {
   return config.local ? `<a class="local-link" href="/?seat=${seat === '1' ? '2' : '1'}" target="_blank" rel="noopener">Открыть окно второго игрока</a>` : '';
 }
+function logout() {
+  token = '';
+  localStorage.removeItem(storageKey);
+  state = null; selection = null; cardsData = null; deckCandidates = null; view = 'lobby';
+  showLogin();
+}
 function showLogin(error='') {
   if (!config.local) {
     app.innerHTML = `<section class="login panel"><span class="eyebrow">Офисный Гвинт</span><h1>Встречаемся<br>за игровым столом.</h1><p class="muted">${esc(error || 'Откройте игру кнопкой в Telegram-боте.')}</p></section>`;
@@ -90,9 +96,10 @@ function render() {
   const r = state.room, p = state.profile;
 if (!r || r.phase === 'closed') {
     if (view !== 'lobby') return renderMenu();
-    app.innerHTML = `<section class="lobby"><div class="lobby-title"><span class="eyebrow">Игровая комната</span><h1>Хороший день,<br>чтобы обыграть коллегу.</h1><div class="profile-row"><span>${esc(p.name)}</span><span class="pill">🏆 ${p.wins} побед</span><span class="pill">🪙 ${p.coins} монет</span></div></div><div class="panels"><section class="panel"><div class="symbol">🃏</div><h2>Собрать партию</h2><p class="muted">Создайте комнату и передайте код сопернику. В партии — два игрока.</p><button id="create">Создать партию</button></section><form class="panel" id="join-form"><div class="symbol">🤝</div><h2>Коллега уже ждёт?</h2><label for="code">Код комнаты</label><input id="code" name="code" maxlength="6" placeholder="Например, AB3D7K" autocomplete="off" autocapitalize="characters" required><button class="secondary" type="submit">Присоединиться</button></form></div>${menuNav()}<div class="lobby-nav extra"><button class="ghost" data-view="shop">🛒 Магазин</button><button class="ghost" data-view="deck">🃏 Моя колода</button><button class="ghost" data-view="cards">✨ Все карты</button></div>${localLink()}</section>`;
+    app.innerHTML = `<section class="lobby"><div class="lobby-title"><span class="eyebrow">Игровая комната</span><h1>Хороший день,<br>чтобы обыграть коллегу.</h1><div class="profile-row"><span>${esc(p.name)}</span><span class="pill">🏆 ${p.wins} побед</span><span class="pill">🪙 ${p.coins} монет</span><button class="ghost" id="logout">Выйти</button></div></div><div class="panels"><section class="panel"><div class="symbol">🃏</div><h2>Собрать партию</h2><p class="muted">Создайте комнату и передайте код сопернику. В партии — два игрока.</p><button id="create">Создать партию</button></section><form class="panel" id="join-form"><div class="symbol">🤝</div><h2>Коллега уже ждёт?</h2><label for="code">Код комнаты</label><input id="code" name="code" maxlength="6" placeholder="Например, AB3D7K" autocomplete="off" autocapitalize="characters" required><button class="secondary" type="submit">Присоединиться</button></form></div>${menuNav()}<div class="lobby-nav extra"><button class="ghost" data-view="shop">🛒 Магазин</button><button class="ghost" data-view="deck">🃏 Моя колода</button><button class="ghost" data-view="cards">✨ Все карты</button><button class="ghost" data-view="rating">🏆 Рейтинг</button></div>${localLink()}</section>`;
     document.querySelector('#create').onclick = () => mutate('/api/rooms');
     document.querySelector('#join-form').onsubmit = event => { event.preventDefault(); mutate('/api/join', {code:event.target.elements.code.value.trim()}); };
+    document.querySelector('#logout').onclick = logout;
     bindMenuNav();
     return;
   }
@@ -132,6 +139,12 @@ async function renderMenu() {
     document.querySelector('#save-deck').addEventListener('click', async () => { cardsData = null; try { const r = await api('/api/deck', {op:'save'}); toast('Колода сохранена'); await refreshMenu(); } catch(e){ toast(e.message); } });
   } else if (view === 'cards') {
     app.innerHTML = `<section class="lobby"><span class="eyebrow">Все карты</span><h1>Каталог.</h1>${back}<div class="cards-grid">${cardsData.map(c => `<div class="panel card-tile"><span class="art">${icon(c.id)}</span><div class="name"><b>${esc(c.name)}</b>${c.legendary?' ⭐':''}${c.owned?` <span class="pill">×${c.count}</span>`:' <span class="muted">—нет</span>'}</div><div class="unit-status">${c.type==='creature'?`⚔ ${c.attack} / ♥ ${c.health}`:'✨ Заклинание'} · ${c.cost} ☕</div><p class="muted tiny">${esc(c.desc||'')}</p></div>`).join('')}</div></section>`;
+  } else if (view === 'rating') {
+    try {
+      const rows = (await api('/api/rating')).slice(0, 20);
+      const medals = ['🥇','🥈','🥉'];
+      app.innerHTML = `<section class="lobby"><span class="eyebrow">Рейтинг</span><h1>Лидеры офиса.</h1>${back}<div class="panels"><ul class="log">${rows.map((x,i)=>`<li><b>${medals[i]||(i+1)+'.'} ${esc(x.name)}</b> — ${x.wins} побед, 🪙 ${x.coins}${String(x.name)===String(p.name)?' · вы':''}</li>`).join('') || '<li class="muted">Пока нет игроков.</li>'}</ul></div></section>`;
+    } catch(e) { toast(e.message); return; }
   }
   bindMenuNav();
   document.querySelector('[data-view-back]')?.addEventListener('click', () => { view='lobby'; cardsData=null; deckCandidates=null; render(); });

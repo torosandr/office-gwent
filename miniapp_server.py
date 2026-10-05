@@ -79,6 +79,8 @@ def make_server(service, host='0.0.0.0', port=8765, bot=None):
                     return self.respond(200, service.menu(self.uid()))
                 if path == '/api/cards':
                     return self.respond(200, service.cards_catalog(self.uid()))
+                if path == '/api/rating':
+                    return self.respond(200, service.rating())
                 if path == '/api/deck-candidates':
                     return self.respond(200, service.deck_candidates(self.uid()))
                 if path == '/health':
