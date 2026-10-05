@@ -1,0 +1,208 @@
+{
+  "SECRET123": {
+    "type": "set",
+    "target": "офисная_жизнь",
+    "limit": 20,
+    "used_by": [
+      {
+        "id": "833896631",
+        "nickname": "Rernot"
+      },
+      {
+        "id": "1115025796",
+        "nickname": "Кар Карыч"
+      },
+      {
+        "id": "838449367",
+        "nickname": "Буба"
+      },
+      {
+        "id": "285373037",
+        "nickname": "Murashkey"
+      }
+    ]
+  },
+  "ITLIFE456": {
+    "type": "set",
+    "target": "it_жизнь",
+    "limit": 10,
+    "used_by": [
+      {
+        "id": "833896631",
+        "nickname": "Rernot"
+      }
+    ]
+  },
+  "COFFEE777": {
+    "type": "card",
+    "target": "кофемашина",
+    "limit": 5,
+    "used_by": []
+  },
+  "BUGS999": {
+    "type": "card",
+    "target": "сломанный_принтер",
+    "limit": 3,
+    "used_by": []
+  },
+  "PANINI": {
+    "type": "set",
+    "target": "панини",
+    "limit": 20,
+    "used_by": [
+      {
+        "id": "833896631",
+        "nickname": "Rernot"
+      },
+      {
+        "id": "289910502",
+        "nickname": "Манделла"
+      },
+      {
+        "id": "1115025796",
+        "nickname": "Кар Карыч"
+      },
+      {
+        "id": "838449367",
+        "nickname": "Буба"
+      },
+      {
+        "id": "5206717034",
+        "nickname": "Ленова"
+      },
+      {
+        "id": "416551886",
+        "nickname": "Noel"
+      },
+      {
+        "id": "964395860",
+        "nickname": "Vera"
+      }
+    ]
+  },
+  "ПОТОП": {
+    "type": "set",
+    "target": "потоп",
+    "limit": 20,
+    "used_by": [
+      {
+        "id": "833896631",
+        "nickname": "Rernot"
+      },
+      {
+        "id": "111",
+        "nickname": "Тест"
+      },
+      {
+        "id": "838449367",
+        "nickname": "Буба"
+      },
+      {
+        "id": "289910502",
+        "nickname": "Манделла"
+      },
+      {
+        "id": "283421240",
+        "nickname": "Nikitos"
+      },
+      {
+        "id": "1115025796",
+        "nickname": "Кар Карыч"
+      },
+      {
+        "id": "416551886",
+        "nickname": "Noel"
+      }
+    ]
+  },
+  "BetaTester": {
+    "type": "set",
+    "target": "бета_тестеры",
+    "limit": 20,
+    "used_by": []
+  },
+  "Cafe": {
+    "type": "set",
+    "target": "кафе",
+    "limit": 20,
+    "used_by": [
+      {
+        "id": "111",
+        "nickname": "Т"
+      },
+      {
+        "id": "833896631",
+        "nickname": "Rernot"
+      },
+      {
+        "id": "838449367",
+        "nickname": "Буба"
+      },
+      {
+        "id": "1115025796",
+        "nickname": "Кар Карыч"
+      },
+      {
+        "id": "289910502",
+        "nickname": "Манделла"
+      }
+    ]
+  },
+  "Stepan": {
+    "type": "set",
+    "target": "степан",
+    "limit": 20,
+    "used_by": [
+      {
+        "id": "111",
+        "nickname": "Т"
+      },
+      {
+        "id": "789",
+        "nickname": "Новичок"
+      },
+      {
+        "id": "833896631",
+        "nickname": "Rernot"
+      }
+    ]
+  },
+  "Workers": {
+    "type": "set",
+    "target": "воркеры",
+    "limit": 20,
+    "used_by": [
+      {
+        "id": "111",
+        "nickname": "Т"
+      }
+    ]
+  },
+  "Пятница": {
+    "type": "set",
+    "target": "пятница",
+    "limit": 20,
+    "used_by": [
+      {
+        "id": "789",
+        "nickname": "Новичок"
+      },
+      {
+        "id": "999",
+        "nickname": "Н"
+      },
+      {
+        "id": "833896631",
+        "nickname": "Rernot"
+      },
+      {
+        "id": "289910502",
+        "nickname": "Манделла"
+      },
+      {
+        "id": "838449367",
+        "nickname": "Буба"
+      }
+    ]
+  }
+}

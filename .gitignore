@@ -1,0 +1,33 @@
+# Секреты: токен берётся из переменной окружения Render (TELEGRAM_BOT_TOKEN), не из кода.
+
+# Локальные данные пользователей и БД — НЕ коммитим
+users.json
+users_live.json
+users_test.json
+miniapp.sqlite3
+backups/
+
+# Кэш Python
+__pycache__/
+*.pyc
+
+# Локальные логи и тестовые стенды
+server-out.txt
+server-err.txt
+miniapp-server*.log
+_test_*.py
+_benchmark*.py
+_simulate.py
+
+# Играбельные каталоги — коммитим (Render нуждается в них)
+!cards.json
+!sets.json
+
+# Локальные черновики и служебное
+1_Start.yaml
+promo_sets.json
+
+# Мусор
+python
+*.lnk
+*.cmd

@@ -1,0 +1,23 @@
+# Render Blueprint для графической версии Офисного Гвинта (миниапп).
+# После деплоя Render сам создаст web-сервис с HTTPS-адресом вида
+# https://<ваше-имя>.onrender.com
+#
+# Шаги:
+# 1. Залейте содержимое папки проекта в новый репозиторий (GitHub/GitLab).
+# 2. В Render: New -> Blueprint -> выберите репозиторий.
+# 3. В Environment добавьте переменную TELEGRAM_BOT_TOKEN (токен бота из @BotFather).
+# 4. После деплоя в панели сервиса найдите URL (https://...onrender.com),
+#    вставьте его в BotFather как кнопку Mini App и в переменную MINIAPP_PUBLIC_URL.
+services:
+  - type: web
+    name: office-gwent
+    runtime: python
+    plan: free
+    buildCommand: ""
+    startCommand: python miniapp_server.py
+    healthCheckPath: /api/config
+    envVars:
+      - key: MINIAPP_PUBLIC_URL
+        sync: false          # заполните в панели после деплоя своим .onrender.com адресом
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false          # заполните токеном бота (иначе сервер не стартует)
