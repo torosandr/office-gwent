@@ -135,7 +135,25 @@ async function renderMenu() {
     document.querySelectorAll('[data-buy]').forEach(el => el.onclick = async () => { cardsData = null; try { await api('/api/buy', {card:el.dataset.buy}); toast('Куплено!'); await refreshMenu(); } catch(e){ toast(e.message); } });
   } else if (view === 'deck') {
     const deck = p.deck || [];
-    app.innerHTML = `<section class="lobby"><span class="eyebrow">Моя колода</span><h1>${deck.length}/15 карт.</h1>${back}<div class="panels"><div class="panel"><h2>В колоде</h2><ul class="log">${deck.map((cid,i)=>`<li><button class="ghost" data-remove="${i}">✕ ${esc(cardName(cid))}</button></li>`).join('') || '<li class="muted">Колода пуста</li>'}</ul></div><div class="panel"><h2>Доступные карты</h2><ul class="log">${deckCandidates.map(cid=>`<li><button data-add="${esc(cid)}">+ ${esc(cardName(cid))}</button></li>`).join('') || '<li class="muted">Нет доступных карт</li>'}</ul></div></div><button id="save-deck" class="secondary">Сохранить колоду</button></section>`;
+    const cardOf = cid => cardsData ? cardsData.find(x => x.id === cid) : null;
+    const mini = cid => { const c = cardOf(cid); return c; };
+    // карточка колоды: иконка + имя + статы, как в бою
+    const deckDeckCard = (cid, i) => {
+      const c = mini(cid) || {name:cid, type:'creature', attack:0, health:0, cost:0, desc:'', legendary:false};
+      const stats = c.type === 'creature'
+        ? `<span>⚔ ${c.attack}</span><span>♥ ${c.health}</span>`
+        : `<span>✦</span><span>${c.cost} ☕</span>`;
+      return `<button class="card unit ready" data-remove="${i}" title="${esc(c.desc||'')}" aria-label="${esc(c.name)}"><span class="art">${icon(c.id)}</span><span class="name">${esc(c.name)}</span><span class="unit-status">&nbsp;</span><span class="stats">${stats}</span></button>`;
+    };
+    // доступная карта
+    const poolCard = cid => {
+      const c = mini(cid) || {name:cid, type:'creature', attack:0, health:0, cost:0, desc:'', legendary:false};
+      const stats = c.type === 'creature'
+        ? `<span>⚔ ${c.attack}</span><span>♥ ${c.health}</span>`
+        : `<span>✦</span><span>${c.cost} ☕</span>`;
+      return `<button class="card unit ${deck.filter(x=>x===cid).length>=2?'unavailable':'ready'}" data-add="${esc(cid)}" title="${esc(c.desc||'')}" aria-label="${esc(c.name)}"><span class="art">${icon(c.id)}</span><span class="name">${esc(c.name)}</span><span class="unit-status">&nbsp;</span><span class="stats">${stats}</span></button>`;
+    };
+    app.innerHTML = `<section class="lobby"><span class="eyebrow">Моя колода</span><h1>${deck.length}/15 карт</h1>${back}<div class="deck-field"><div class="deck-box"><h2>Ваша колода</h2><div class="deck-grid" id="deck-grid">${deck.map(deckDeckCard).join('') || '<p class="muted">Колода пуста</p>'}</div></div><button id="save-deck" class="secondary">Сохранить колоду</button></div><div class="deck-box"><h2>Доступные карты <span class="muted">· ${deckCandidates.length}</span></h2><div class="deck-pool" id="deck-pool">${deckCandidates.map(poolCard).join('') || '<p class="muted">Нет доступных карт</p>'}</div></div></section>`;
     document.querySelectorAll('[data-add]').forEach(el => el.onclick = async () => { cardsData = null; try { await api('/api/deck', {op:'add', card:el.dataset.add}); await refreshMenu(); } catch(e){ toast(e.message); } });
     document.querySelectorAll('[data-remove]').forEach(el => el.onclick = async () => { try { await api('/api/deck', {op:'remove', index:Number(el.dataset.remove)}); await refreshMenu(); } catch(e){ toast(e.message); } });
     document.querySelector('#save-deck').addEventListener('click', async () => { cardsData = null; try { const r = await api('/api/deck', {op:'save'}); toast('Колода сохранена'); await refreshMenu(); } catch(e){ toast(e.message); } });
