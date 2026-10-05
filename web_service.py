@@ -200,9 +200,17 @@ class Service:
 
     # ---------- Магазин / колода / карты ----------
 
+    def _load_profile(self, text):
+        """Безопасно парсит profile из users.json/miniapp. При ошибке — пустой dict."""
+        try:
+            p = json.loads(text)
+            return p if isinstance(p, dict) else {}
+        except (ValueError, TypeError):
+            return {}
+
     def _profile_json(self, db, uid):
         row = db.execute('SELECT profile FROM users WHERE uid=?', (uid,)).fetchone()
-        return json.loads(row['profile'])
+        return self._load_profile(row['profile'] if row else '{}')
 
     def _save_profile(self, db, uid, profile):
         clean = {k: v for k, v in profile.items() if k not in ('id', 'name')}
@@ -212,7 +220,7 @@ class Service:
         """Сводка для внеигрового меню: имя, монеты, колода, доступные карты."""
         with self.connect() as db:
             row = db.execute('SELECT name, profile FROM users WHERE uid=?', (uid,)).fetchone()
-            profile = json.loads(row['profile'])
+            profile = self._load_profile(row['profile'] if row else '{}')
         return {
             'name': row['name'],
             'coins': profile.get('coins', 0),
@@ -227,10 +235,10 @@ class Service:
             rows = db.execute('SELECT uid, name, profile FROM users').fetchall()
         items = []
         for row in rows:
-            prof = json.loads(row['profile'])
+            prof = self._load_profile(row['profile'])
             if not row['name']:
                 continue
-            items.append({'name': row['name'], 'wins': prof.get('wins', 0),
+            items.append({'name': str(row['name'])[:32], 'wins': prof.get('wins', 0),
                           'coins': prof.get('coins', 0)})
         items.sort(key=lambda x: (-x['wins'], -x['coins'], x['name']))
         return items
