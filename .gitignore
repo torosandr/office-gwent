@@ -1,7 +1,7 @@
 # Секреты: токен берётся из переменной окружения Render (TELEGRAM_BOT_TOKEN), не из кода.
 
-# Локальные данные пользователей и БД — НЕ коммитим
-users.json
+# Локальные данные пользователей НЕ коммитим — но users.json нужен как первичный профиль на Render.
+!users.json
 users_live.json
 users_test.json
 miniapp.sqlite3

@@ -78,13 +78,12 @@ class Service:
         if telegram:
             user = validate_telegram(body.get('init_data', ''), self.bot_token)
             uid = str(user['id'])
-            name = str(user.get('first_name') or 'Игрок')[:32]
+            tg_name = str(user.get('first_name') or 'Игрок')[:32]
         else:
             if not self.local:
                 raise WebError('Локальный вход отключён.', 403)
             entered_id = str(body.get('id') or '').strip()
             name = str(body.get('name') or '').strip()[:32]
-            # Вход по игровому ID из users.json бота: позволяет подтянуть колоду, героя и статистику.
             if entered_id:
                 original = self._bot_profile(entered_id)
                 if original is None:
@@ -105,6 +104,11 @@ class Service:
                             profile[key] = original.get(key, profile[key])
                         elif key == 'collection':
                             profile[key] = {}
+                    # если нашли профиль бота — берём его ник
+                    if telegram and original.get('nickname'):
+                        name = str(original['nickname'])[:32]
+                elif telegram:
+                    name = tg_name
                 db.execute('INSERT INTO users VALUES(?,?,?)', (uid, name, json.dumps(profile, ensure_ascii=False)))
             token = secrets.token_urlsafe(32)
             db.execute('DELETE FROM sessions WHERE expires < ?', (time.time(),))
