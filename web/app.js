@@ -9,6 +9,7 @@ let state = null, selection = null, busy = false, polling = false, config = null
 let view = 'lobby', cardsData = null, deckCandidates = null;
 let sequence = 0, appliedSequence = 0, renderKey = '', toastTimer;
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const infoAttr = data => 'data-info="' + esc(JSON.stringify(data)).replace(/"/g,'&quot;') + '"';
 const icons = {'вахтер':'🛡️','стажер':'🧑‍💻','бухгалтер':'🧮','кофемашина':'☕','дедлайн':'⏰','срочное_совещание':'📣','сломанный_принтер':'🖨️','свободная_пятница':'🎉','посудомойка':'🌀','покур':'💨','капучино':'☕','нянячка_таня':'💚','зеленая_гречка':'🍚','эспрессо':'☕','бпла_в_окно':'⚡','сокращение':'✂️','проджект_менеджер':'🛡️','тестировщик':'🔎','маркетолог':'📈','степан':'👨‍💼','заседание_женклуба':'🧊','лень':'🦥','предвкушение':'🍻','пиво':'🍺','завал':'📚'};
 const icon = cid => icons[cid] || (cid?.includes('панини') ? '🥪' : '🃏');
 
@@ -131,7 +132,7 @@ async function renderMenu() {
   const back = '<button class="ghost" data-view-back>← В игровую</button>';
   if (view === 'shop') {
     const items = (await api('/api/cards')).filter(c => c.for_sale);
-    app.innerHTML = `<section class="lobby"><span class="eyebrow">Магазин</span><h1>Прокачка команды.</h1><p class="muted">Баланс: 🪙 ${esc(p.coins)}</p>${back}<div class="panels shop-grid">${items.map(c => `<div class="panel card-shop"><h2>${esc(c.name)}</h2><p class="muted tiny">${esc(c.desc||'')}</p><p class="muted"><b>${c.price} 🪙</b>${c.legendary?' · ⭐ Легендарная':''}</p><button data-buy="${esc(c.id)}">Купить</button></div>`).join('') || '<p class="muted">В магазине пока пусто.</p>'}</div></section>`;
+    app.innerHTML = `<section class="lobby"><span class="eyebrow">Магазин</span><h1>Прокачка команды.</h1><p class="muted">Баланс: 🪙 ${esc(p.coins)}</p>${back}<div class="panels shop-grid">${items.map(c => `<div class="panel card-shop"><h2>${esc(c.name)}</h2><p class="muted tiny">${esc(c.desc||'')}</p><p class="muted"><b>${c.price} 🪙</b>${c.legendary?' · ⭐ Легендарная':''}</p><div ${infoAttr(c)} style="display:inline-block"><button data-buy="${esc(c.id)}">Купить</button></div></div>`).join('') || '<p class="muted">В магазине пока пусто.</p>'}</div></section>`;
     document.querySelectorAll('[data-buy]').forEach(el => el.onclick = async () => { cardsData = null; try { await api('/api/buy', {card:el.dataset.buy}); toast('Куплено!'); await refreshMenu(); } catch(e){ toast(e.message); } });
   } else if (view === 'deck') {
     const deck = p.deck || [];
@@ -143,7 +144,7 @@ async function renderMenu() {
       const stats = c.type === 'creature'
         ? `<span>⚔ ${c.attack}</span><span>♥ ${c.health}</span>`
         : `<span>✦</span><span>${c.cost} ☕</span>`;
-      return `<button class="card unit ready" data-remove="${i}" title="${esc(c.desc||'')}" aria-label="${esc(c.name)}"><span class="art">${icon(c.id)}</span><span class="name">${esc(c.name)}</span><span class="unit-status">&nbsp;</span><span class="stats">${stats}</span></button>`;
+      return `<button class="card unit ready" data-remove="${i}" ${infoAttr(c)} title="${esc(c.desc||'')}" aria-label="${esc(c.name)}"><span class="art">${icon(c.id)}</span><span class="name">${esc(c.name)}</span><span class="unit-status">&nbsp;</span><span class="stats">${stats}</span></button>`;
     };
     // доступная карта
     const poolCard = cid => {
@@ -151,14 +152,14 @@ async function renderMenu() {
       const stats = c.type === 'creature'
         ? `<span>⚔ ${c.attack}</span><span>♥ ${c.health}</span>`
         : `<span>✦</span><span>${c.cost} ☕</span>`;
-      return `<button class="card unit ${deck.filter(x=>x===cid).length>=2?'unavailable':'ready'}" data-add="${esc(cid)}" title="${esc(c.desc||'')}" aria-label="${esc(c.name)}"><span class="art">${icon(c.id)}</span><span class="name">${esc(c.name)}</span><span class="unit-status">&nbsp;</span><span class="stats">${stats}</span></button>`;
+      return `<button class="card unit ${deck.filter(x=>x===cid).length>=2?'unavailable':'ready'}" data-add="${esc(cid)}" ${infoAttr(c)} title="${esc(c.desc||'')}" aria-label="${esc(c.name)}"><span class="art">${icon(c.id)}</span><span class="name">${esc(c.name)}</span><span class="unit-status">&nbsp;</span><span class="stats">${stats}</span></button>`;
     };
     app.innerHTML = `<section class="lobby"><span class="eyebrow">Моя колода</span><h1>${deck.length}/15 карт</h1>${back}<div class="deck-field"><div class="deck-box"><h2>Ваша колода</h2><div class="deck-grid" id="deck-grid">${deck.map(deckDeckCard).join('') || '<p class="muted">Колода пуста</p>'}</div></div><button id="save-deck" class="secondary">Сохранить колоду</button></div><div class="deck-box"><h2>Доступные карты <span class="muted">· ${deckCandidates.length}</span></h2><div class="deck-pool" id="deck-pool">${deckCandidates.map(poolCard).join('') || '<p class="muted">Нет доступных карт</p>'}</div></div></section>`;
     document.querySelectorAll('[data-add]').forEach(el => el.onclick = async () => { cardsData = null; try { await api('/api/deck', {op:'add', card:el.dataset.add}); await refreshMenu(); } catch(e){ toast(e.message); } });
     document.querySelectorAll('[data-remove]').forEach(el => el.onclick = async () => { try { await api('/api/deck', {op:'remove', index:Number(el.dataset.remove)}); await refreshMenu(); } catch(e){ toast(e.message); } });
     document.querySelector('#save-deck').addEventListener('click', async () => { cardsData = null; try { const r = await api('/api/deck', {op:'save'}); toast('Колода сохранена'); await refreshMenu(); } catch(e){ toast(e.message); } });
   } else if (view === 'cards') {
-    app.innerHTML = `<section class="lobby"><span class="eyebrow">Все карты</span><h1>Каталог.</h1>${back}<div class="cards-grid">${cardsData.map(c => `<div class="panel card-tile"><span class="art">${icon(c.id)}</span><div class="name"><b>${esc(c.name)}</b>${c.legendary?' ⭐':''}${c.owned?` <span class="pill">×${c.count}</span>`:' <span class="muted">—нет</span>'}</div><div class="unit-status">${c.type==='creature'?`⚔ ${c.attack} / ♥ ${c.health}`:'✨ Заклинание'} · ${c.cost} ☕</div><p class="muted tiny">${esc(c.desc||'')}</p></div>`).join('')}</div></section>`;
+    app.innerHTML = `<section class="lobby"><span class="eyebrow">Все карты</span><h1>Каталог.</h1>${back}<div class="cards-grid">${cardsData.map(c => `<div class="panel card-tile" ${infoAttr(c)}><span class="art">${icon(c.id)}</span><div class="name"><b>${esc(c.name)}</b>${c.legendary?' ⭐':''}${c.owned?` <span class="pill">×${c.count}</span>`:' <span class="muted">—нет</span>'}</div><div class="unit-status">${c.type==='creature'?`⚔ ${c.attack} / ♥ ${c.health}`:'✨ Заклинание'} · ${c.cost} ☕</div><p class="muted tiny">${esc(c.desc||'')}</p></div>`).join('')}</div></section>`;
   } else if (view === 'rating') {
     try {
       const rows = (await api('/api/rating')).slice(0, 20);
@@ -187,10 +188,12 @@ function hero(side, player) {
 function unitMarkup(side, unit) {
   const target = canTarget(side, unit.index), active = side === 'me' && unit.targets.length > 0;
   const tags = [unit.frozen ? '🧊 Заморожен' : '', unit.deadline != null ? `💣 Взрыв через ${unit.deadline}` : '', unit.stunned || unit.asleep ? '💤 Спит' : '', unit.attacked ? 'Уже атаковал' : '', unit.status === 'таунт' || unit.status === 'супер_таунт' ? '🛡 Защита' : ''].filter(Boolean);
-  return `<button class="card unit ${target ? 'target' : ''} ${active ? 'ready' : ''} ${selection?.kind === 'attack' && selection.index === unit.index && side === 'me' ? 'selected' : ''}" ${target ? `data-target="${side}:${unit.index}"` : `data-unit="${side}:${unit.index}"`} title="${esc(unit.desc)}" aria-label="${esc(unit.name)}, атака ${unit.attack}, здоровье ${unit.hp}"><span class="art">${icon(unit.card)}</span>${unit.deadline != null ? `<span class="deadline-chip">💣 ${unit.deadline}</span>` : ''}<span class="name">${esc(unit.name)}</span><span class="unit-status">${esc(tags.join(' · '))}</span><span class="stats"><span>⚔ ${unit.attack}</span><span>♥ ${unit.hp}</span></span></button>`;
+  const info = {id:unit.card, name:unit.name, type:'creature', attack:unit.attack, hp:unit.hp, max_hp:unit.max_hp, status:unit.status, desc:unit.desc, deadline:unit.deadline, frozen:unit.frozen};
+  return `<button class="card unit ${target ? 'target' : ''} ${active ? 'ready' : ''} ${selection?.kind === 'attack' && selection.index === unit.index && side === 'me' ? 'selected' : ''}" ${target ? `data-target="${side}:${unit.index}"` : `data-unit="${side}:${unit.index}"`} ${infoAttr(info)} title="${esc(unit.desc)}" aria-label="${esc(unit.name)}, атака ${unit.attack}, здоровье ${unit.hp}"><span class="art">${icon(unit.card)}</span>${unit.deadline != null ? `<span class="deadline-chip">💣 ${unit.deadline}</span>` : ''}<span class="name">${esc(unit.name)}</span><span class="unit-status">${esc(tags.join(' · '))}</span><span class="stats"><span>⚔ ${unit.attack}</span><span>♥ ${unit.hp}</span></span></button>`;
 }
 function cardMarkup(card) {
-  return `<button class="card ${card.type === 'spell' ? 'spell' : ''} ${card.playable ? 'ready' : 'unavailable'} ${selection?.kind === 'cast' && selection.index === card.index ? 'selected' : ''}" data-card="${card.index}" aria-label="${esc(card.name)}, ${card.cost} кофе"><span class="cost">${card.cost}</span><span class="art">${icon(card.id)}</span><span class="name">${esc(card.name)}</span><span class="desc">${esc(card.desc)}</span><span class="stats">${card.type === 'creature' ? `<span>⚔ ${card.attack}</span><span>♥ ${card.health}</span>` : '<span>✦ Заклинание</span>'}</span></button>`;
+  const info = {id:card.id, name:card.name, type:card.type, cost:card.cost, attack:card.attack, health:card.health, status:card.status, desc:card.desc, legendary:card.legendary};
+  return `<button class="card ${card.type === 'spell' ? 'spell' : ''} ${card.playable ? 'ready' : 'unavailable'} ${selection?.kind === 'cast' && selection.index === card.index ? 'selected' : ''}" data-card="${card.index}" ${infoAttr(info)} aria-label="${esc(card.name)}, ${card.cost} кофе"><span class="cost">${card.cost}</span><span class="art">${icon(card.id)}</span><span class="name">${esc(card.name)}</span><span class="desc">${esc(card.desc)}</span><span class="stats">${card.type === 'creature' ? `<span>⚔ ${card.attack}</span><span>♥ ${card.health}</span>` : '<span>✦ Заклинание</span>'}</span></button>`;
 }
 function renderGame(r) {
   const ended = r.phase === 'finished';
@@ -231,6 +234,42 @@ document.querySelector('#confirm').addEventListener('close', event => {
 });
 document.addEventListener('visibilitychange', () => {if(!document.hidden) refresh();});
 window.addEventListener('online', refresh);
+
+// ---- Подробное описание карт (долгое нажатие) ----
+function showCardInfo(c) {
+  if (!c) return;
+  const status = c.status ? (c.status === 'таунт'||c.status==='супер_таунт'?'🛡 ':'') : '';
+  const legendary = c.legendary ? ' ⭐' : '';
+  const body = document.querySelector('#cardinfo-body');
+  const stats = c.type === 'creature'
+    ? `<span>⚔ ${c.attack}</span><span>♥ ${c.hp ?? c.max_hp ?? c.health}</span>`
+    : `<span>${c.cost} ☕</span>`;
+  body.innerHTML = `
+    <div class="ci-art">${icon(c.id)}</div>
+    <div class="ci-name"><b>${esc(c.name)}</b>${legendary}</div>
+    <div class="ci-type">${c.type === 'creature' ? 'Существо' : 'Заклинание'} · ${c.cost} ☕</div>
+    <div class="ci-stats">${stats}</div>
+    <div class="ci-desc">${esc(c.desc || '')}</div>`;
+  document.querySelector('#cardinfo').showModal();
+  document.querySelector('#cardinfo').scrollTop = 0;
+}
+// Глобальное долгое нажатие на карты
+let lpTimer = null, lpEl = null, lpStarted = false;
+document.addEventListener('pointerdown', e => {
+  const card = e.target.closest('[data-info]');
+  if (!card) return;
+  lpEl = card; lpStarted = false;
+  lpTimer = setTimeout(() => {
+    lpStarted = true;
+    try { showCardInfo(JSON.parse(card.dataset.info)); } catch(_) {}
+  }, 420);
+});
+document.addEventListener('pointerup', () => { clearTimeout(lpTimer); lpTimer=null; lpEl=null; });
+document.addEventListener('pointercancel', () => { clearTimeout(lpTimer); lpTimer=null; lpEl=null; });
+// если долгое нажатие сработало — не давать обычному клику выполниться
+document.addEventListener('click', e => {
+  if (lpStarted) { e.stopPropagation(); e.preventDefault(); lpStarted = false; }
+}, true);
 async function start() {
   try {
     config = await api('/api/config');

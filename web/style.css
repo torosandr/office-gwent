@@ -26,3 +26,16 @@
 /* Адаптив для телефона: карты чуть уже */
 @media(max-width:640px){.deck-grid,.deck-pool{grid-template-columns:repeat(4,1fr);gap:8px}}
 @media(max-width:420px){.deck-grid,.deck-pool{grid-template-columns:repeat(3,1fr);gap:8px}}
+
+/* Карточка информации (долгое нажатие) */
+.card-info{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:8px 4px;max-height:60vh;overflow:auto}
+.card-info .ci-art{font-size:2.6rem}
+.card-info .ci-name{font-size:1.3rem}
+.card-info .ci-legend{color:var(--gold)}
+.card-info .ci-type,.card-info .ci-stats{color:var(--muted)}
+.card-info .ci-desc{color:var(--ink);line-height:1.5;max-width:90%}
+#cardinfo{border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#1b3039,#14232c);color:var(--ink);padding:24px;max-width:340px;width:max-content}
+#cardinfo::backdrop{background:rgba(0,0,0,.55)}
+#cardinfo form{display:flex;justify-content:center;margin-top:14px}
+/* чтобы карты в каталоге не были кл>икабельны странно */
+.card-tile{cursor:pointer}
