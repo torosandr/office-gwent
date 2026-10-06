@@ -125,3 +125,6 @@
  .deck-field{margin-bottom:16px}
  .deck-box{margin-bottom:16px}
 }
+
+.card.painted-card[role="button"]{cursor:pointer;touch-action:manipulation;-webkit-appearance:none;appearance:none}
+.card.painted-card[role="button"]:focus-visible{outline:3px solid var(--gold);outline-offset:3px}

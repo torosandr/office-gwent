@@ -155,7 +155,7 @@ async function renderMenu() {
     // карточка колоды: иконка + имя + статы, как в бою
     const deckDeckCard = (cid, i) => {
       const c = mini(cid) || {name:cid, type:'creature', attack:0, health:0, cost:0, desc:'', legendary:false};
-      if (cardImage(c)) return `<button class="card unit ready painted-card" data-remove="${i}" ${infoAttr(c)} title="${esc(c.desc||'')}" aria-label="${esc(c.name)}">${paintedFace(c)}</button>`;
+      if (cardImage(c)) return `<div role="button" tabindex="0" class="card unit ready painted-card" data-remove="${i}" ${infoAttr(c)} title="${esc(c.desc||'')}" aria-label="${esc(c.name)}">${paintedFace(c)}</div>`;
       const stats = c.type === 'creature'
         ? `<span>⚔ ${c.attack}</span><span>♥ ${c.health}</span>`
         : `<span>✦</span><span>${c.cost} ☕</span>`;
@@ -164,7 +164,7 @@ async function renderMenu() {
     // доступная карта
     const poolCard = cid => {
       const c = mini(cid) || {name:cid, type:'creature', attack:0, health:0, cost:0, desc:'', legendary:false};
-      if (cardImage(c)) return `<button class="card unit painted-card ${deck.filter(x=>x===cid).length>=2?'unavailable':'ready'}" data-add="${esc(cid)}" ${infoAttr(c)} title="${esc(c.desc||'')}" aria-label="${esc(c.name)}">${paintedFace(c)}</button>`;
+      if (cardImage(c)) return `<div role="button" tabindex="0" class="card unit painted-card ${deck.filter(x=>x===cid).length>=2?'unavailable':'ready'}" data-add="${esc(cid)}" ${infoAttr(c)} title="${esc(c.desc||'')}" aria-label="${esc(c.name)}">${paintedFace(c)}</div>`;
       const stats = c.type === 'creature'
         ? `<span>⚔ ${c.attack}</span><span>♥ ${c.health}</span>`
         : `<span>✦</span><span>${c.cost} ☕</span>`;
@@ -209,12 +209,12 @@ function unitMarkup(side, unit) {
   const target = canTarget(side, unit.index), active = side === 'me' && unit.targets.length > 0;
   const tags = [unit.frozen ? '🧊 Заморожен' : '', unit.deadline != null ? `💣 Взрыв через ${unit.deadline}` : '', unit.stunned || unit.asleep ? '💤 Спит' : '', unit.attacked ? 'Уже атаковал' : '', unit.status === 'таунт' || unit.status === 'супер_таунт' ? '🛡 Защита' : ''].filter(Boolean);
   const info = {id:unit.card, name:unit.name, type:'creature', cost:unit.cost, attack:unit.attack, hp:unit.hp, max_hp:unit.max_hp, status:unit.status, desc:unit.desc, deadline:unit.deadline, frozen:unit.frozen};
-  if (cardImage(info)) return `<button data-fx-key="p${effectPlayer(side)}:u${esc(unit.uid)}" class="card unit painted-card ${target?'target':''} ${active?'ready':''} ${selection?.kind==='attack' && selection.index===unit.index && side==='me'?'selected':''}" ${target?`data-target="${side}:${unit.index}"`:`data-unit="${side}:${unit.index}"`} ${infoAttr(info)} title="${esc(unit.desc)}" aria-label="${esc(unit.name)}, атака ${unit.attack}, здоровье ${unit.hp}">${paintedFace(info,tags.join(' · '))}${unit.deadline != null?`<span class="deadline-chip">💣 ${unit.deadline}</span>`:''}</button>`;
+  if (cardImage(info)) return `<div role="button" tabindex="0" data-fx-key="p${effectPlayer(side)}:u${esc(unit.uid)}" class="card unit painted-card ${target?'target':''} ${active?'ready':''} ${selection?.kind==='attack' && selection.index===unit.index && side==='me'?'selected':''}" ${target?`data-target="${side}:${unit.index}"`:`data-unit="${side}:${unit.index}"`} ${infoAttr(info)} title="${esc(unit.desc)}" aria-label="${esc(unit.name)}, атака ${unit.attack}, здоровье ${unit.hp}">${paintedFace(info,tags.join(' · '))}${unit.deadline != null?`<span class="deadline-chip">💣 ${unit.deadline}</span>`:''}</div>`;
   return `<button data-fx-key="p${effectPlayer(side)}:u${esc(unit.uid)}" class="card unit ${target ? 'target' : ''} ${active ? 'ready' : ''} ${selection?.kind === 'attack' && selection.index === unit.index && side === 'me' ? 'selected' : ''}" ${target ? `data-target="${side}:${unit.index}"` : `data-unit="${side}:${unit.index}"`} ${infoAttr(info)} title="${esc(unit.desc)}" aria-label="${esc(unit.name)}, атака ${unit.attack}, здоровье ${unit.hp}"><span class="art">${icon(unit.card)}</span>${unit.deadline != null ? `<span class="deadline-chip">💣 ${unit.deadline}</span>` : ''}<span class="name">${esc(unit.name)}</span><span class="unit-status">${esc(tags.join(' · '))}</span><span class="stats"><span>⚔ ${unit.attack}</span><span>♥ ${unit.hp}</span></span></button>`;
 }
 function cardMarkup(card) {
   const info = {id:card.id, name:card.name, type:card.type, cost:card.cost, attack:card.attack, health:card.health, status:card.status, desc:card.desc, legendary:card.legendary};
-  if (cardImage(card)) return `<button data-fx-key="p${state.room.player_number}:h${card.index}" class="card painted-card ${card.playable?'ready':'unavailable'} ${selection?.kind==='cast' && selection.index===card.index?'selected':''}" data-card="${card.index}" ${infoAttr(info)} aria-label="${esc(card.name)}, ${card.cost} кофе">${paintedFace(card)}</button>`;
+  if (cardImage(card)) return `<div role="button" tabindex="0" data-fx-key="p${state.room.player_number}:h${card.index}" class="card painted-card ${card.playable?'ready':'unavailable'} ${selection?.kind==='cast' && selection.index===card.index?'selected':''}" data-card="${card.index}" ${infoAttr(info)} aria-label="${esc(card.name)}, ${card.cost} кофе">${paintedFace(card)}</div>`;
   return `<button data-fx-key="p${state.room.player_number}:h${card.index}" class="card ${card.type === 'spell' ? 'spell' : ''} ${card.playable ? 'ready' : 'unavailable'} ${selection?.kind === 'cast' && selection.index === card.index ? 'selected' : ''}" data-card="${card.index}" ${infoAttr(info)} aria-label="${esc(card.name)}, ${card.cost} кофе"><span class="cost">${card.cost}</span><span class="art">${icon(card.id)}</span><span class="name">${esc(card.name)}</span><span class="desc">${esc(card.desc)}</span><span class="stats">${card.type === 'creature' ? `<span>⚔ ${card.attack}</span><span>♥ ${card.health}</span>` : '<span>✦ Заклинание</span>'}</span></button>`;
 }
 function renderGame(r) {
@@ -350,3 +350,10 @@ new MutationObserver(() => {
     });
   });
 }).observe(document.body, {childList:true, subtree:true});
+
+// Illustrated actions share the same element structure as the working catalogue.
+document.addEventListener('keydown', event => {
+  const card = event.target.closest('.painted-card[role="button"]');
+  if (!card || card.closest('.paint-catalog-item') || (event.key !== 'Enter' && event.key !== ' ')) return;
+  event.preventDefault(); card.click();
+});
