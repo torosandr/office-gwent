@@ -1,6 +1,7 @@
 """Текстовый бот в webhook-режиме, делит users.json с миниаппом в одном процессе."""
 import os
 import json
+import threading
 import requests
 from config import FILES, TELEGRAM_TOKEN, API_BASE
 from storage import UserStore
@@ -16,6 +17,7 @@ class BotRuntime:
     """Строит Handlers на общем users.json и обрабатывает апдейты из webhook."""
 
     def __init__(self):
+        self.update_lock = threading.RLock()
         self.store = UserStore(FILES["users"])
         self.games = GameData()
         self.handlers = Handlers(self.store, self.games, build_menu)
@@ -26,7 +28,8 @@ class BotRuntime:
             return None
         if 'update_id' not in body:
             return None
-        handle_update(body, self.handlers)
+        with self.update_lock:
+            handle_update(body, self.handlers)
         return None
 
     def set_webhook(self, url):

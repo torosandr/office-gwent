@@ -79,6 +79,10 @@ def make_server(service, host='0.0.0.0', port=8765, bot=None):
                     return self.respond(200, service.menu(self.uid()))
                 if path == '/api/cards':
                     return self.respond(200, service.cards_catalog(self.uid()))
+                if path == '/api/heroes':
+                    return self.respond(200, service.heroes(self.uid()))
+                if path == '/api/packs':
+                    return self.respond(200, service.my_packs(self.uid()))
                 if path == '/api/rating':
                     return self.respond(200, service.rating())
                 if path == '/api/deck-candidates':
@@ -87,7 +91,7 @@ def make_server(service, host='0.0.0.0', port=8765, bot=None):
                     return self.respond(200, {'ok': True})
                 if path == '/telegram-health':
                     return self.respond(200, {'ok': bool(bot)})
-                files = {'/': ('index.html', 'text/html; charset=utf-8'),
+                files = {'/pack.svg': ('pack.svg', 'image/svg+xml'), '/': ('index.html', 'text/html; charset=utf-8'),
                          '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
                          '/sounds.js': ('sounds.js', 'text/javascript; charset=utf-8'),
                          '/animations.js': ('animations.js', 'text/javascript; charset=utf-8'),
@@ -134,6 +138,12 @@ def make_server(service, host='0.0.0.0', port=8765, bot=None):
                     raise WebError('Некорректный запрос.')
                 if path in ('/api/auth/local', '/api/auth/telegram'):
                     result = service.authenticate(body, telegram=path.endswith('telegram'))
+                elif path == '/api/hero':
+                    result = service.select_hero(self.uid(), str(body.get('hero', '')))
+                elif path == '/api/promo':
+                    result = service.redeem_promo(self.uid(), body.get('code'))
+                elif path == '/api/packs/open':
+                    result = service.open_pack(self.uid(), str(body.get('id', '')))
                 elif path == '/api/buy':
                     result = service.buy(self.uid(), str(body.get('card', '')))
                 elif path == '/api/deck':
@@ -163,7 +173,7 @@ def main():
     parser = argparse.ArgumentParser(description='Office Gwent Mini App')
     parser.add_argument('--local', action='store_true', help='Enable local test players (loopback only)')
     parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', '8765')))
-    parser.add_argument('--database', default=str(ROOT / 'miniapp.sqlite3'))
+    parser.add_argument('--database', default=os.environ.get('MINIAPP_DATABASE_PATH', str(ROOT / 'miniapp.sqlite3')))
     args = parser.parse_args()
     token = (os.environ.get('TELEGRAM_BOT_TOKEN') or getattr(config, 'TOKEN', '') or '').strip()
     if not args.local and not token:
@@ -178,6 +188,8 @@ def main():
             bot = build_bot_runtime()
         except Exception as error:
             print('webhook bot disabled:', error, file=sys.stderr)
+    if bot is not None:
+        bot.games.promo_service = service
     server = make_server(service, port=args.port, bot=bot)
     print(f'Office Gwent: http://0.0.0.0:{args.port}', flush=True)
     # Прописываем webhook текстового бота, если известен публичный URL.

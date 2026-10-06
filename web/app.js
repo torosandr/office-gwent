@@ -20,6 +20,7 @@ function paintedFace(card, status='') {
   const digits = value => String(value ?? '').length > 3 ? ' tiny-number' : String(value ?? '').length > 2 ? ' wide-number' : '';
   return `<div class="paint-face ${creature ? '' : 'paint-spell'}"><img class="paint-image" loading="lazy" decoding="async" src="/art/${image}" alt="" aria-hidden="true" draggable="false"><span class="paint-cost${digits(card.cost)}">${esc(card.cost ?? 0)}</span><span class="paint-name${(card.name || '').length > 22 ? ' long-name' : ''}">${esc(card.name)}</span><span class="paint-desc${(card.desc || '').length > 110 ? ' long-description' : ''}">${esc(card.desc || '')}</span><span class="paint-attack${digits(card.attack)}">${creature ? esc(card.attack ?? 0) : '✦'}</span><span class="paint-health${creature && card.hp != null && card.hp < card.max_hp ? ' wounded' : ''}${digits(hp)}">${creature ? esc(hp ?? 0) : '—'}</span>${status ? `<span class="paint-status">${esc(status)}</span>` : ''}</div>`;
 }
+const cardCount = n => `${n} ${n % 100 >= 11 && n % 100 <= 14 ? 'карт' : n % 10 === 1 ? 'карта' : n % 10 >= 2 && n % 10 <= 4 ? 'карты' : 'карт'}`;
 const icon = cid => icons[cid] || (cid?.includes('панини') ? '🥪' : '🃏');
 
 function toast(message) {
@@ -113,7 +114,7 @@ function render() {
   const r = state.room, p = state.profile;
 if (!r || r.phase === 'closed') {
     if (view !== 'lobby') return renderMenu();
-    app.innerHTML = `<section class="lobby"><div class="lobby-title"><span class="eyebrow">Игровая комната</span><h1>Хороший день,<br>чтобы обыграть коллегу.</h1><div class="profile-row"><span>${esc(p.name)}</span><span class="pill">🏆 ${p.wins} побед</span><span class="pill">🪙 ${p.coins} монет</span><button class="ghost" id="logout">Выйти</button></div></div><div class="panels"><section class="panel"><div class="symbol">🃏</div><h2>Собрать партию</h2><p class="muted">Создайте комнату и передайте код сопернику. В партии — два игрока.</p><button id="create">Создать партию</button></section><form class="panel" id="join-form"><div class="symbol">🤝</div><h2>Коллега уже ждёт?</h2><label for="code">Код комнаты</label><input id="code" name="code" maxlength="6" placeholder="Например, AB3D7K" autocomplete="off" autocapitalize="characters" required><button class="secondary" type="submit">Присоединиться</button></form></div>${menuNav()}<div class="lobby-nav extra"><button class="ghost" data-view="shop">🛒 Магазин</button><button class="ghost" data-view="deck">🃏 Моя колода</button><button class="ghost" data-view="cards">✨ Все карты</button><button class="ghost" data-view="rating">🏆 Рейтинг</button></div>${localLink()}</section>`;
+    app.innerHTML = `<section class="lobby"><div class="lobby-title"><span class="eyebrow">Игровая комната</span><h1>Хороший день,<br>чтобы обыграть коллегу.</h1><div class="profile-row"><span>${esc(p.name)}</span><span class="pill">🏆 ${p.wins} побед</span><span class="pill">🪙 ${p.coins} монет</span><button class="ghost" id="logout">Выйти</button></div></div><div class="panels"><section class="panel"><div class="symbol">🃏</div><h2>Собрать партию</h2><p class="muted">Создайте комнату и передайте код сопернику. В партии — два игрока.</p><button id="create">Создать партию</button></section><form class="panel" id="join-form"><div class="symbol">🤝</div><h2>Коллега уже ждёт?</h2><label for="code">Код комнаты</label><input id="code" name="code" maxlength="6" placeholder="Например, AB3D7K" autocomplete="off" autocapitalize="characters" required><button class="secondary" type="submit">Присоединиться</button></form></div>${menuNav()}<div class="lobby-nav extra"><button class="ghost" data-view="shop">🛒 Магазин</button><button class="ghost" data-view="deck">🃏 Моя колода</button><button class="ghost" data-view="cards">✨ Все карты</button><button class="ghost" data-view="rating">🏆 Рейтинг</button><button class="ghost" data-view="heroes">👤 Персонаж</button><button class="ghost" data-view="packs">📦 Мои наборы</button><button class="ghost" data-view="promo">🎟 Промокод</button></div>${localLink()}</section>`;
     document.querySelector('#create').onclick = () => mutate('/api/rooms');
     document.querySelector('#join-form').onsubmit = event => { event.preventDefault(); mutate('/api/join', {code:event.target.elements.code.value.trim()}); };
     document.querySelector('#logout').onclick = logout;
@@ -132,7 +133,7 @@ function menuNav() {
   return '<div class="menu-nav-label muted tiny">Также доступно:</div>';
 }
 function bindMenuNav() {
-  document.querySelectorAll('[data-view]').forEach(el => el.onclick = () => { view = el.dataset.view; renderMenu(); });
+  document.querySelectorAll('[data-view]').forEach(el => el.onclick = () => { view = el.dataset.view; renderMenu().catch(error=>toast(error.message)); });
 }
 async function renderMenu() {
   if (!token) { showLogin(); return; }
@@ -176,11 +177,27 @@ async function renderMenu() {
     document.querySelector('#save-deck').addEventListener('click', async () => { cardsData = null; try { const r = await api('/api/deck', {op:'save'}); toast('Колода сохранена'); await refreshMenu(); } catch(e){ toast(e.message); } });
   } else if (view === 'cards') {
     app.innerHTML = `<section class="lobby"><span class="eyebrow">Все карты</span><h1>Каталог.</h1>${back}<div class="cards-grid">${cardsData.map(c => cardImage(c) ? `<div class="paint-catalog-item"><div class="card painted-card" ${infoAttr(c)} role="button" tabindex="0" aria-label="${esc(c.name)}">${paintedFace(c)}</div><span class="muted tiny">${c.legendary?'⭐ Легендарная · ':''}${c.base ? `Базовая · доступна${c.count > 0 ? ` · В коллекции: ${c.count}` : ''}` : c.owned?`В коллекции: ${c.count}`:'Нет в коллекции'}</span></div>` : `<div class="panel card-tile" ${infoAttr(c)}><span class="art">${icon(c.id)}</span><div class="name"><b>${esc(c.name)}</b>${c.legendary?' ⭐':''}${c.owned?` <span class="pill">×${c.count}</span>`:' <span class="muted">—нет</span>'}</div><div class="unit-status">${c.type==='creature'?`⚔ ${c.attack} / ♥ ${c.health}`:'✨ Заклинание'} · ${c.cost} ☕</div><p class="muted tiny">${esc(c.desc||'')}</p></div>`).join('')}</div></section>`;
+  } else if (view === 'heroes') {
+    const data = await api('/api/heroes');
+    app.innerHTML = `<section class="lobby"><span class="eyebrow">Персонаж</span><h1>Кто вы в офисе?</h1>${back}<p class="muted">Выбор действует со следующей партии.</p><div class="panels">${data.heroes.map(h=>`<section class="panel hero-choice"><span class="hero-portrait">${h.id==='режиссер'?'🎬':'✨'}</span><h2>${esc(h.name)}</h2><p>${esc(h.desc)}</p><button data-choose-hero="${esc(h.id)}" ${h.id===data.selected?'disabled':''}>${h.id===data.selected?'Выбран':'Выбрать'}</button></section>`).join('')}</div></section>`;
+    document.querySelectorAll('[data-choose-hero]').forEach(el=>el.onclick=async()=>{
+      el.disabled=true; try { await api('/api/hero',{hero:el.dataset.chooseHero}); toast('Персонаж выбран'); await renderMenu(); } catch(e){el.disabled=false;toast(e.message);}
+    });
+  } else if (view === 'promo') {
+    app.innerHTML = `<section class="lobby"><span class="eyebrow">Промокод</span><h1>Есть кое-что для вас.</h1>${back}<form id="promo-form" class="panel promo-panel"><label for="promo-code">Промокод</label><input id="promo-code" maxlength="100" autocomplete="off" autocapitalize="characters" required><p class="muted">Награда появится запечатанной в разделе «Мои наборы». Карты получите при открытии.</p><button>Получить пакетик</button></form></section>`;
+    document.querySelector('#promo-form').onsubmit=async event=>{
+      event.preventDefault(); const button=event.target.querySelector('button'); button.disabled=true;
+      try { const reward=await api('/api/promo',{code:document.querySelector('#promo-code').value}); toast(`${reward.name} добавлен`); view='packs'; await renderMenu(); } catch(e){toast(e.message);button.disabled=false;}
+    };
+  } else if (view === 'packs') {
+    const packs = await api('/api/packs');
+    app.innerHTML = `<section class="lobby"><span class="eyebrow">Мои наборы</span><h1>Распакуйте офис.</h1>${back}<p class="muted">${packs.length?'Откройте пакетик, чтобы добавить карты в коллекцию.':'Закрытых пакетиков пока нет. Получите набор за промокод.'}</p><div class="pack-grid">${packs.map(pack=>`<section class="panel pack-item"><img class="pack-art" src="/pack.svg" alt="Запечатанный офисный пакетик"><h2>${esc(pack.name)}</h2><p class="muted">${cardCount(pack.size)}</p><button data-open-pack="${esc(pack.id)}">Открыть пакетик</button></section>`).join('')}</div><button class="secondary" data-view="promo">Ввести промокод</button></section>`;
+    document.querySelectorAll('[data-open-pack]').forEach(el=>el.onclick=()=>openPack(el.dataset.openPack,el));
   } else if (view === 'rating') {
     try {
       const rows = (await api('/api/rating')).slice(0, 20);
       const medals = ['🥇','🥈','🥉'];
-      app.innerHTML = `<section class="lobby"><span class="eyebrow">Рейтинг</span><h1>Лидеры офиса.</h1>${back}<div class="panels"><ul class="log">${rows.map((x,i)=>`<li><b>${medals[i]||(i+1)+'.'} ${esc(x.name)}</b> — ${x.wins} побед, 🪙 ${x.coins}${String(x.name)===String(p.name)?' · вы':''}</li>`).join('') || '<li class="muted">Пока нет игроков.</li>'}</ul></div></section>`;
+      app.innerHTML = `<section class="lobby"><span class="eyebrow">Рейтинг</span><h1>Лидеры офиса.</h1>${back}<div class="panels"><ul class="log">${rows.map((x,i)=>`<li><b>${medals[i]||(i+1)+'.'} ${esc(x.name)}</b> — ${x.wins} побед · 🃏 ${x.cards} видов · ${x.copies} экз. в коллекции · 🪙 ${x.coins}${String(x.name)===String(p.name)?' · вы':''}</li>`).join('') || '<li class="muted">Пока нет игроков.</li>'}</ul></div></section>`;
     } catch(e) { toast(e.message); return; }
   }
   bindMenuNav();
@@ -357,3 +374,23 @@ document.addEventListener('keydown', event => {
   if (!card || card.closest('.paint-catalog-item') || (event.key !== 'Enter' && event.key !== ' ')) return;
   event.preventDefault(); card.click();
 });
+
+async function openPack(id, button) {
+  if (document.querySelector('#pack-reveal')) return;
+  button.disabled=true;
+  const dialog=document.createElement('dialog'); dialog.id='pack-reveal';
+  dialog.innerHTML=`<h2>Открываем пакетик…</h2><div class="pack-stage"><div class="pack-light"></div><img class="pack-art opening" src="/pack.svg" alt="Открывающийся пакетик"></div>`;
+  dialog.addEventListener('cancel',event=>{if(dialog.dataset.opening==='true')event.preventDefault();});
+  dialog.dataset.opening='true'; document.body.append(dialog);dialog.showModal();
+  try {
+    const reward=await api('/api/packs/open',{id}); cardsData=null;deckCandidates=null;
+    const art=dialog.querySelector('.pack-art');
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches && art.animate) {
+      await art.animate([{transform:'rotate(-7deg) scale(1)'},{transform:'rotate(8deg) scale(1.08)',offset:.3},{transform:'rotate(-4deg) scale(1.12)',offset:.55},{transform:'scale(1.5)',opacity:0}],{duration:850,easing:'ease-in-out',fill:'forwards'}).finished;
+    }
+    dialog.dataset.opening='false';
+    dialog.innerHTML=`<span class="eyebrow">Пакетик открыт</span><h2>${esc(reward.name)}</h2><p class="muted">Получено: ${cardCount(reward.cards.length)}. Добавлены в коллекцию.</p><div class="pack-rewards">${reward.cards.map((card,i)=>`<div class="reward-card ${card.legendary?'legendary-reward':''}"><div class="card painted-card">${paintedFace(card)}</div>${card.legendary?'<span>⭐ Легендарная</span>':''}</div>`).join('')}</div><button id="pack-done">В мои наборы</button>`;
+    dialog.querySelector('#pack-done').onclick=()=>dialog.close();
+    dialog.addEventListener('close',()=>{dialog.remove();if(view==='packs')renderMenu();},{once:true});
+  } catch(e){dialog.close();dialog.remove();button.disabled=false;toast(e.message);}
+}

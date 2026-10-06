@@ -13,6 +13,7 @@ from cards import CARDS
 from config import BASE_CARD_IDS, HEROES, WIN_COINS, SHOP_PRICES, LEGENDARY_CARD_IDS
 from web_state import dump_game, load_game
 from web_events import capture_effects, record_effects
+from web_rewards import Rewards
 
 
 class WebError(Exception):
@@ -44,7 +45,7 @@ def validate_telegram(init_data, token, now=None):
         raise WebError('Не удалось подтвердить вход. Откройте игру из Telegram заново.', 401)
 
 
-class Service:
+class Service(Rewards):
     def __init__(self, path, local=False, bot_token='', profiles_path=None):
         self.path, self.local, self.bot_token = str(path), local, bot_token
         self.profiles_path = profiles_path
@@ -58,6 +59,8 @@ class Service:
                 CREATE TABLE IF NOT EXISTS membership(uid TEXT PRIMARY KEY, code TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS actions(uid TEXT, request_id TEXT, PRIMARY KEY(uid,request_id));
             ''')
+
+        self.init_rewards()
 
     @contextmanager
     def connect(self):
@@ -230,7 +233,8 @@ class Service:
             'coins': profile.get('coins', 0),
             'wins': profile.get('wins', 0),
             'deck': profile.get('deck', []),
-            'collection': profile.get('collection', {}),
+            'collection': self.collection_counts(uid, profile),
+            'hero': profile.get('hero', 'режиссер'),
         }
 
     def rating(self):
@@ -242,7 +246,7 @@ class Service:
                 bot_profiles = json.load(stream)
             if not isinstance(bot_profiles, dict):
                 bot_profiles = {}
-        except (OSError, ValueError):
+        except (OSError, ValueError, TypeError):
             bot_profiles = {}
 
         def number(value):
@@ -254,31 +258,33 @@ class Service:
                 continue
             players[str(uid)] = {'name': str(prof['nickname'])[:32],
                                  'wins': number(prof.get('wins', 0)),
-                                 'coins': number(prof.get('coins', 0))}
+                                 'coins': number(prof.get('coins', 0)),
+                                 'collection': prof.get('collection', {})}
         for row in rows:
             if not row['name']:
                 continue
             prof = self._load_profile(row['profile'])
             item = {'name': str(row['name'])[:32], 'wins': number(prof.get('wins', 0)),
-                    'coins': number(prof.get('coins', 0))}
+                    'coins': number(prof.get('coins', 0)), 'collection': prof.get('collection', {})}
             previous = players.get(str(row['uid']))
             if previous:
                 # Imported bot totals are already included; do not sum copies.
                 item['wins'] = max(item['wins'], previous['wins'])
                 item['name'] = previous['name']
+                for cid, count in previous['collection'].items():
+                    item['collection'][cid] = max(number(item['collection'].get(cid, 0)), number(count))
             players[str(row['uid'])] = item
-        return sorted(players.values(), key=lambda x: (-x['wins'], -x['coins'], x['name']))
+        for item in players.values():
+            collection = item.pop('collection')
+            item['cards'] = len(set(BASE_CARD_IDS) | {cid for cid, n in collection.items() if cid in CARDS and number(n) > 0})
+            item['copies'] = sum(number(n) for cid, n in collection.items() if cid in CARDS)
+        return sorted(players.values(), key=lambda x: (-x['wins'], -x['cards'], x['name']))
 
     def cards_catalog(self, uid):
         """Все карты игры с пометкой легендарности и наличия в коллекции."""
         with self.connect() as db:
             profile = self._profile_json(db, uid)
-        collection = dict(profile.get('collection', {}))
-        # Bot rewards/purchases can arrive after the Mini App profile was created.
-        # Copies already imported from the bot must not be counted twice.
-        original = self._bot_profile(uid) or {}
-        for cid, count in original.get('collection', {}).items():
-            collection[cid] = max(collection.get(cid, 0), count)
+        collection = self.collection_counts(uid, profile)
         items = []
         for cid, card in CARDS.items():
             items.append({
@@ -346,7 +352,7 @@ class Service:
         """Карты, из которых можно собирать колоду: базовые + из коллекции."""
         with self.connect() as db:
             profile = self._profile_json(db, uid)
-        owned = set(profile.get('collection', {}).keys()) | set(BASE_CARD_IDS)
+        owned = {cid for cid, count in self.collection_counts(uid, profile).items() if count > 0} | set(BASE_CARD_IDS)
         return sorted((cid for cid in CARDS if cid in owned),
                       key=lambda c: CARDS[c].get('name', c))
 

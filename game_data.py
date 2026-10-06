@@ -64,6 +64,17 @@ class GameData:
         if code == "":
             return True, "Вы пропустили ввод промокода."
 
+        if getattr(self, 'promo_service', None) is not None:
+            from web_service import WebError
+            try:
+                result = self.promo_service.redeem_promo(user_store.id_of(user), code, immediate=True)
+            except WebError as error:
+                return False, str(error)
+            user['collection'] = result['collection']
+            user['sets'] = result['sets']
+            user_store.persist()
+            return True, f"✅ Промокод принят! Начислен набор: {result['name']}\nОсталось применений: {result['remaining']}"
+
         # ищем промокод без учёта регистра
         key = None
         for existing in self.codes:
