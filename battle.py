@@ -557,7 +557,9 @@ class Game:
 
     def _heal_hero(self, pnum, amount):
         p = self.players[pnum]
+        before = p.stress
         p.stress = min(p.stress + amount, self.MAX_STRESS)
+        self._healed_total = getattr(self, "_healed_total", 0) + max(0, p.stress - before)
 
     # ---------- герой ----------
 

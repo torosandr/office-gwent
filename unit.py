@@ -70,10 +70,12 @@ class Unit:
         return actual
 
     def heal(self, amount):
+        before = self.hp
         if self.unlimited_heal:
             self.hp += amount  # без потолка (Степан)
         else:
             self.hp = min(self.hp + amount, self.max_hp)
+        self._healed_total = getattr(self, "_healed_total", 0) + max(0, self.hp - before)
 
     def __repr__(self):
         return f"<Unit {self.name} {self.attack}/{self.hp}>"

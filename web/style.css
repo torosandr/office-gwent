@@ -39,3 +39,7 @@
 #cardinfo form{display:flex;justify-content:center;margin-top:14px}
 /* чтобы карты в каталоге не были кл>икабельны странно */
 .card-tile{cursor:pointer}
+
+/* Persistent global sound control. */
+.sound-toggle{min-width:42px;min-height:42px;padding:8px;flex-shrink:0;font-size:21px;line-height:1}
+.sound-toggle:focus-visible{outline:2px solid #efc66d;outline-offset:3px}

@@ -89,6 +89,7 @@ def make_server(service, host='0.0.0.0', port=8765, bot=None):
                     return self.respond(200, {'ok': bool(bot)})
                 files = {'/': ('index.html', 'text/html; charset=utf-8'),
                          '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
+                         '/sounds.js': ('sounds.js', 'text/javascript; charset=utf-8'),
                          '/style.css': ('style.css', 'text/css; charset=utf-8')}
                 if path not in files:
                     raise WebError('Страница не найдена.', 404)

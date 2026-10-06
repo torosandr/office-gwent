@@ -32,6 +32,7 @@ async function api(path, body) {
     if (Array.isArray(result)) return result; // массивы (напр. rating) не оборачиваем
     return {...result, _seq:seq};
   } catch (error) {
+    window.GameSound.play('error');
     if (!error.status) { setConnection(false); error.message = 'Связь с сервером потеряна. Партия сохранена — попробуйте ещё раз.'; }
     throw error;
   } finally { clearTimeout(timeout); }
@@ -40,6 +41,7 @@ function accept(data) {
   if (data._seq < appliedSequence) return;
   appliedSequence = data._seq;
   if (state?.room?.code !== data.room?.code || state?.room?.version !== data.room?.version) selection = null;
+  window.GameSound.accept(data.room);
   state = data;
   document.querySelector('#avatar').textContent = data.profile.name.slice(0,2).toUpperCase();
   const key = JSON.stringify([data.profile, data.room?.code, data.room?.version]);
@@ -207,9 +209,9 @@ function renderGame(r) {
   document.querySelector('#cancel-selection')?.addEventListener('click', () => {selection=null; render();});
   document.querySelectorAll('[data-card]').forEach(el => el.onclick = () => {
     const card = r.hand[Number(el.dataset.card)];
-    if (!card.playable) { toast(card.reason); return; }
+    if (!card.playable) { window.GameSound.play("error"); toast(card.reason); return; }
     if (card.targeted) {
-      if (!card.targets.length) {toast('На поле нет подходящей цели.');return;}
+      if (!card.targets.length) {window.GameSound.play('error');toast('На поле нет подходящей цели.');return;}
       selection = {kind:'cast',index:card.index,status:card.status,targets:card.targets}; render();
     } else { selection=null; action({action:'play',index:card.index}); }
   });

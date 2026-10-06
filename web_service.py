@@ -12,6 +12,7 @@ from battle import Game, BattleError
 from cards import CARDS
 from config import BASE_CARD_IDS, HEROES, WIN_COINS, SHOP_PRICES, LEGENDARY_CARD_IDS
 from web_state import dump_game, load_game
+from web_events import capture_effects, record_effects
 
 
 class WebError(Exception):
@@ -157,6 +158,8 @@ class Service:
             return result
         game = load_game(json.loads(row['snapshot']))
         me = 1 if row['p1'] == uid else 2
+        room["events"] = getattr(game, "_web_events", [])
+        room["player_number"] = me
         def side(number):
             p = game.players[number]
             board = []
@@ -365,6 +368,7 @@ class Service:
                 game = load_game(json.loads(room['snapshot']))
                 me = 1 if room['p1'] == uid else 2
                 action = body.get('action')
+                effects_before = capture_effects(game)
                 if action == 'concede':
                     game.phase, game.winner = 'finished', 3-me
                     game.winner_name = game.players[3-me].name
@@ -390,6 +394,7 @@ class Service:
                             raise WebError('Неизвестное действие.')
                     except BattleError as error:
                         raise WebError(str(error))
+                record_effects(game, effects_before, action, body, me)
                 awarded = room['awarded']
                 if game.phase == 'finished' and not awarded:
                     winner = room['p1'] if game.winner == 1 else room['p2']
