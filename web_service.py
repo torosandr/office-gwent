@@ -251,7 +251,12 @@ class Service:
         """Все карты игры с пометкой легендарности и наличия в коллекции."""
         with self.connect() as db:
             profile = self._profile_json(db, uid)
-        owned = set(profile.get('collection', {}).keys())
+        collection = dict(profile.get('collection', {}))
+        # Bot rewards/purchases can arrive after the Mini App profile was created.
+        # Copies already imported from the bot must not be counted twice.
+        original = self._bot_profile(uid) or {}
+        for cid, count in original.get('collection', {}).items():
+            collection[cid] = max(collection.get(cid, 0), count)
         items = []
         for cid, card in CARDS.items():
             items.append({
@@ -261,7 +266,9 @@ class Service:
                 'desc': card.get('desc', ''), 'legendary': cid in LEGENDARY_CARD_IDS,
                 'price': SHOP_PRICES.get(cid),
                 'for_sale': cid in SHOP_PRICES,
-                'owned': cid in owned, 'count': profile.get('collection', {}).get(cid, 0),
+                'base': cid in BASE_CARD_IDS,
+                'owned': cid in BASE_CARD_IDS or collection.get(cid, 0) > 0,
+                'count': collection.get(cid, 0),
             })
         return items
 
