@@ -11,6 +11,15 @@ let sequence = 0, appliedSequence = 0, renderKey = '', toastTimer;
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const infoAttr = data => 'data-info="' + esc(JSON.stringify(data)).replace(/"/g,'&quot;') + '"';
 const icons = {'вахтер':'🛡️','стажер':'🧑‍💻','бухгалтер':'🧮','кофемашина':'☕','дедлайн':'⏰','срочное_совещание':'📣','сломанный_принтер':'🖨️','свободная_пятница':'🎉','посудомойка':'🌀','покур':'💨','капучино':'☕','нянячка_таня':'💚','зеленая_гречка':'🍚','эспрессо':'☕','бпла_в_окно':'⚡','сокращение':'✂️','проджект_менеджер':'🛡️','тестировщик':'🔎','маркетолог':'📈','степан':'👨‍💼','заседание_женклуба':'🧊','лень':'🦥','предвкушение':'🍻','пиво':'🍺','завал':'📚'};
+const cardImages = {'стажер':'trainee-v1.png','кофемашина':'coffee-machine-v1.png','дедлайн':'deadline-v1.png','срочное_совещание':'meeting-v1.png'};
+const cardImage = card => cardImages[card.id || card.card];
+function paintedFace(card, status='') {
+  const image = cardImage(card);
+  const creature = card.type === 'creature';
+  const hp = card.hp ?? card.health;
+  const digits = value => String(value ?? '').length > 3 ? ' tiny-number' : String(value ?? '').length > 2 ? ' wide-number' : '';
+  return `<img class="paint-image" src="/art/${image}" alt="" aria-hidden="true" draggable="false"><span class="paint-cost${digits(card.cost)}">${esc(card.cost ?? 0)}</span><span class="paint-name">${esc(card.name)}</span><span class="paint-desc">${esc(card.desc || '')}</span><span class="paint-attack${digits(card.attack)}">${creature ? esc(card.attack ?? 0) : '✦'}</span><span class="paint-health${creature && card.hp != null && card.hp < card.max_hp ? ' wounded' : ''}${digits(hp)}">${creature ? esc(hp ?? 0) : '—'}</span>${status ? `<span class="paint-status">${esc(status)}</span>` : ''}`;
+}
 const icon = cid => icons[cid] || (cid?.includes('панини') ? '🥪' : '🃏');
 
 function toast(message) {
@@ -137,7 +146,7 @@ async function renderMenu() {
   const back = '<button class="ghost" data-view-back>← В игровую</button>';
   if (view === 'shop') {
     const items = (await api('/api/cards')).filter(c => c.for_sale);
-    app.innerHTML = `<section class="lobby"><span class="eyebrow">Магазин</span><h1>Прокачка команды.</h1><p class="muted">Баланс: 🪙 ${esc(p.coins)}</p>${back}<div class="panels shop-grid">${items.map(c => `<div class="panel card-shop"><h2>${esc(c.name)}</h2><p class="muted tiny">${esc(c.desc||'')}</p><p class="muted"><b>${c.price} 🪙</b>${c.legendary?' · ⭐ Легендарная':''}</p><div ${infoAttr(c)} style="display:inline-block"><button data-buy="${esc(c.id)}">Купить</button></div></div>`).join('') || '<p class="muted">В магазине пока пусто.</p>'}</div></section>`;
+    app.innerHTML = `<section class="lobby"><span class="eyebrow">Магазин</span><h1>Прокачка команды.</h1><p class="muted">Баланс: 🪙 ${esc(p.coins)}</p>${back}<div class="panels shop-grid">${items.map(c => `<div class="panel card-shop">${cardImage(c)?`<div class="card painted-card" ${infoAttr(c)}>${paintedFace(c)}</div>`:`<h2>${esc(c.name)}</h2><p class="muted tiny">${esc(c.desc||'')}</p>`}<p class="muted"><b>${c.price} 🪙</b>${c.legendary?' · ⭐ Легендарная':''}</p><div ${infoAttr(c)} style="display:inline-block"><button data-buy="${esc(c.id)}">Купить</button></div></div>`).join('') || '<p class="muted">В магазине пока пусто.</p>'}</div></section>`;
     document.querySelectorAll('[data-buy]').forEach(el => el.onclick = async () => { cardsData = null; try { await api('/api/buy', {card:el.dataset.buy}); toast('Куплено!'); await refreshMenu(); } catch(e){ toast(e.message); } });
   } else if (view === 'deck') {
     const deck = p.deck || [];
@@ -146,6 +155,7 @@ async function renderMenu() {
     // карточка колоды: иконка + имя + статы, как в бою
     const deckDeckCard = (cid, i) => {
       const c = mini(cid) || {name:cid, type:'creature', attack:0, health:0, cost:0, desc:'', legendary:false};
+      if (cardImage(c)) return `<button class="card unit ready painted-card" data-remove="${i}" ${infoAttr(c)} title="${esc(c.desc||'')}" aria-label="${esc(c.name)}">${paintedFace(c)}</button>`;
       const stats = c.type === 'creature'
         ? `<span>⚔ ${c.attack}</span><span>♥ ${c.health}</span>`
         : `<span>✦</span><span>${c.cost} ☕</span>`;
@@ -154,6 +164,7 @@ async function renderMenu() {
     // доступная карта
     const poolCard = cid => {
       const c = mini(cid) || {name:cid, type:'creature', attack:0, health:0, cost:0, desc:'', legendary:false};
+      if (cardImage(c)) return `<button class="card unit painted-card ${deck.filter(x=>x===cid).length>=2?'unavailable':'ready'}" data-add="${esc(cid)}" ${infoAttr(c)} title="${esc(c.desc||'')}" aria-label="${esc(c.name)}">${paintedFace(c)}</button>`;
       const stats = c.type === 'creature'
         ? `<span>⚔ ${c.attack}</span><span>♥ ${c.health}</span>`
         : `<span>✦</span><span>${c.cost} ☕</span>`;
@@ -164,7 +175,7 @@ async function renderMenu() {
     document.querySelectorAll('[data-remove]').forEach(el => el.onclick = async () => { try { await api('/api/deck', {op:'remove', index:Number(el.dataset.remove)}); await refreshMenu(); } catch(e){ toast(e.message); } });
     document.querySelector('#save-deck').addEventListener('click', async () => { cardsData = null; try { const r = await api('/api/deck', {op:'save'}); toast('Колода сохранена'); await refreshMenu(); } catch(e){ toast(e.message); } });
   } else if (view === 'cards') {
-    app.innerHTML = `<section class="lobby"><span class="eyebrow">Все карты</span><h1>Каталог.</h1>${back}<div class="cards-grid">${cardsData.map(c => `<div class="panel card-tile" ${infoAttr(c)}><span class="art">${icon(c.id)}</span><div class="name"><b>${esc(c.name)}</b>${c.legendary?' ⭐':''}${c.owned?` <span class="pill">×${c.count}</span>`:' <span class="muted">—нет</span>'}</div><div class="unit-status">${c.type==='creature'?`⚔ ${c.attack} / ♥ ${c.health}`:'✨ Заклинание'} · ${c.cost} ☕</div><p class="muted tiny">${esc(c.desc||'')}</p></div>`).join('')}</div></section>`;
+    app.innerHTML = `<section class="lobby"><span class="eyebrow">Все карты</span><h1>Каталог.</h1>${back}<div class="cards-grid">${cardsData.map(c => cardImage(c) ? `<div class="paint-catalog-item"><div class="card painted-card" ${infoAttr(c)} role="button" tabindex="0" aria-label="${esc(c.name)}">${paintedFace(c)}</div><span class="muted tiny">${c.legendary?'⭐ Легендарная · ':''}${c.owned?`В коллекции: ${c.count}`:'Нет в коллекции'}</span></div>` : `<div class="panel card-tile" ${infoAttr(c)}><span class="art">${icon(c.id)}</span><div class="name"><b>${esc(c.name)}</b>${c.legendary?' ⭐':''}${c.owned?` <span class="pill">×${c.count}</span>`:' <span class="muted">—нет</span>'}</div><div class="unit-status">${c.type==='creature'?`⚔ ${c.attack} / ♥ ${c.health}`:'✨ Заклинание'} · ${c.cost} ☕</div><p class="muted tiny">${esc(c.desc||'')}</p></div>`).join('')}</div></section>`;
   } else if (view === 'rating') {
     try {
       const rows = (await api('/api/rating')).slice(0, 20);
@@ -173,7 +184,10 @@ async function renderMenu() {
     } catch(e) { toast(e.message); return; }
   }
   bindMenuNav();
-  document.querySelector('[data-view-back]')?.addEventListener('click', () => { view='lobby'; cardsData=null; deckCandidates=null; render(); });
+  document.querySelector('[data-view-back]')?.addEventListener('click', async () => {
+    view='lobby'; cardsData=null; deckCandidates=null; renderKey='';
+    try { accept(await api('/api/state')); } catch (error) { toast(error.message); }
+  });
   document.querySelectorAll('[data-view]').forEach(el => {});
 }
 async function refreshMenu() { state = await api('/api/menu'); cardsData = (view==='shop') ? await api('/api/cards') : cardsData; renderMenu(); }
@@ -194,11 +208,13 @@ function hero(side, player) {
 function unitMarkup(side, unit) {
   const target = canTarget(side, unit.index), active = side === 'me' && unit.targets.length > 0;
   const tags = [unit.frozen ? '🧊 Заморожен' : '', unit.deadline != null ? `💣 Взрыв через ${unit.deadline}` : '', unit.stunned || unit.asleep ? '💤 Спит' : '', unit.attacked ? 'Уже атаковал' : '', unit.status === 'таунт' || unit.status === 'супер_таунт' ? '🛡 Защита' : ''].filter(Boolean);
-  const info = {id:unit.card, name:unit.name, type:'creature', attack:unit.attack, hp:unit.hp, max_hp:unit.max_hp, status:unit.status, desc:unit.desc, deadline:unit.deadline, frozen:unit.frozen};
+  const info = {id:unit.card, name:unit.name, type:'creature', cost:unit.cost, attack:unit.attack, hp:unit.hp, max_hp:unit.max_hp, status:unit.status, desc:unit.desc, deadline:unit.deadline, frozen:unit.frozen};
+  if (cardImage(info)) return `<button data-fx-key="p${effectPlayer(side)}:u${esc(unit.uid)}" class="card unit painted-card ${target?'target':''} ${active?'ready':''} ${selection?.kind==='attack' && selection.index===unit.index && side==='me'?'selected':''}" ${target?`data-target="${side}:${unit.index}"`:`data-unit="${side}:${unit.index}"`} ${infoAttr(info)} title="${esc(unit.desc)}" aria-label="${esc(unit.name)}, атака ${unit.attack}, здоровье ${unit.hp}">${paintedFace(info,tags.join(' · '))}${unit.deadline != null?`<span class="deadline-chip">💣 ${unit.deadline}</span>`:''}</button>`;
   return `<button data-fx-key="p${effectPlayer(side)}:u${esc(unit.uid)}" class="card unit ${target ? 'target' : ''} ${active ? 'ready' : ''} ${selection?.kind === 'attack' && selection.index === unit.index && side === 'me' ? 'selected' : ''}" ${target ? `data-target="${side}:${unit.index}"` : `data-unit="${side}:${unit.index}"`} ${infoAttr(info)} title="${esc(unit.desc)}" aria-label="${esc(unit.name)}, атака ${unit.attack}, здоровье ${unit.hp}"><span class="art">${icon(unit.card)}</span>${unit.deadline != null ? `<span class="deadline-chip">💣 ${unit.deadline}</span>` : ''}<span class="name">${esc(unit.name)}</span><span class="unit-status">${esc(tags.join(' · '))}</span><span class="stats"><span>⚔ ${unit.attack}</span><span>♥ ${unit.hp}</span></span></button>`;
 }
 function cardMarkup(card) {
   const info = {id:card.id, name:card.name, type:card.type, cost:card.cost, attack:card.attack, health:card.health, status:card.status, desc:card.desc, legendary:card.legendary};
+  if (cardImage(card)) return `<button data-fx-key="p${state.room.player_number}:h${card.index}" class="card painted-card ${card.playable?'ready':'unavailable'} ${selection?.kind==='cast' && selection.index===card.index?'selected':''}" data-card="${card.index}" ${infoAttr(info)} aria-label="${esc(card.name)}, ${card.cost} кофе">${paintedFace(card)}</button>`;
   return `<button data-fx-key="p${state.room.player_number}:h${card.index}" class="card ${card.type === 'spell' ? 'spell' : ''} ${card.playable ? 'ready' : 'unavailable'} ${selection?.kind === 'cast' && selection.index === card.index ? 'selected' : ''}" data-card="${card.index}" ${infoAttr(info)} aria-label="${esc(card.name)}, ${card.cost} кофе"><span class="cost">${card.cost}</span><span class="art">${icon(card.id)}</span><span class="name">${esc(card.name)}</span><span class="desc">${esc(card.desc)}</span><span class="stats">${card.type === 'creature' ? `<span>⚔ ${card.attack}</span><span>♥ ${card.health}</span>` : '<span>✦ Заклинание</span>'}</span></button>`;
 }
 function renderGame(r) {
@@ -244,9 +260,14 @@ window.addEventListener('online', refresh);
 // ---- Подробное описание карт (долгое нажатие) ----
 function showCardInfo(c) {
   if (!c) return;
+  const body = document.querySelector('#cardinfo-body');
+  body.classList.toggle('illustrated-info',Boolean(cardImage(c)));
+  if (cardImage(c)) {
+    body.innerHTML = `<div class="card painted-card card-zoom">${paintedFace(c)}</div><div class="ci-type">${c.type === 'creature' ? 'Существо' : 'Заклинание'}${c.legendary ? ' · ⭐ Легендарная' : ''}</div>`;
+    document.querySelector('#cardinfo').showModal(); document.querySelector('#cardinfo').scrollTop = 0; return;
+  }
   const status = c.status ? (c.status === 'таунт'||c.status==='супер_таунт'?'🛡 ':'') : '';
   const legendary = c.legendary ? ' ⭐' : '';
-  const body = document.querySelector('#cardinfo-body');
   const stats = c.type === 'creature'
     ? `<span>⚔ ${c.attack}</span><span>♥ ${c.hp ?? c.max_hp ?? c.health}</span>`
     : `<span>${c.cost} ☕</span>`;
@@ -259,6 +280,17 @@ function showCardInfo(c) {
   document.querySelector('#cardinfo').showModal();
   document.querySelector('#cardinfo').scrollTop = 0;
 }
+// Illustrated catalogue cards can also be inspected with a click or keyboard.
+document.addEventListener('click', event => {
+  const card = event.target.closest('.paint-catalog-item [data-info]');
+  if (card && !event.defaultPrevented) showCardInfo(JSON.parse(card.dataset.info));
+});
+document.addEventListener('keydown', event => {
+  const card = event.target.closest('.paint-catalog-item [data-info]');
+  if (card && (event.key === 'Enter' || event.key === ' ')) {
+    event.preventDefault(); showCardInfo(JSON.parse(card.dataset.info));
+  }
+});
 // Глобальное долгое нажатие на карты
 let lpTimer = null, lpEl = null, lpStarted = false;
 document.addEventListener('pointerdown', e => {

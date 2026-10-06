@@ -173,7 +173,7 @@ class Service:
                             targets.append(target)
                         except BattleError:
                             pass
-                board.append({'index': index, 'uid': u._visual_id, 'card': u.card, 'name': u.name, 'attack': u.attack,
+                board.append({'index': index, 'uid': u._visual_id, 'card': u.card, 'name': u.name, 'attack': u.attack, 'cost': u.cost,
                               'hp': u.hp, 'max_hp': u.max_hp, 'status': u.status, 'asleep': u.asleep,
                               'stunned': u.stunned, 'frozen': u.freeze_cycles, 'attacked': u.attacked,
                               'deadline': u.timer if u.status == 'дедлайн' else None,

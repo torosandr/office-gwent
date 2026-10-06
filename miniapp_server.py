@@ -34,13 +34,13 @@ def make_server(service, host='0.0.0.0', port=8765, bot=None):
         def log_message(self, format, *args):
             pass
 
-        def respond(self, status, content, content_type='application/json; charset=utf-8'):
+        def respond(self, status, content, content_type='application/json; charset=utf-8', cache_control='no-store'):
             if not isinstance(content, bytes):
                 content = json.dumps(content, ensure_ascii=False).encode()
             self.send_response(status)
             self.send_header('Content-Type', content_type)
             self.send_header('Content-Length', str(len(content)))
-            self.send_header('Cache-Control', 'no-store')
+            self.send_header('Cache-Control', cache_control)
             self.send_header('X-Content-Type-Options', 'nosniff')
             self.send_header('Referrer-Policy', 'no-referrer')
             self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self' https://telegram.org; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'")
@@ -91,11 +91,16 @@ def make_server(service, host='0.0.0.0', port=8765, bot=None):
                          '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
                          '/sounds.js': ('sounds.js', 'text/javascript; charset=utf-8'),
                          '/animations.js': ('animations.js', 'text/javascript; charset=utf-8'),
-                         '/style.css': ('style.css', 'text/css; charset=utf-8')}
+                         '/style.css': ('style.css', 'text/css; charset=utf-8'),
+                         '/art/trainee-v1.png': ('art/trainee-v1.png', 'image/png'),
+                         '/art/coffee-machine-v1.png': ('art/coffee-machine-v1.png', 'image/png'),
+                         '/art/deadline-v1.png': ('art/deadline-v1.png', 'image/png'),
+                         '/art/meeting-v1.png': ('art/meeting-v1.png', 'image/png')}
                 if path not in files:
                     raise WebError('Страница не найдена.', 404)
                 name, mime = files[path]
-                self.respond(200, (ROOT / 'web' / name).read_bytes(), mime)
+                self.respond(200, (ROOT / 'web' / name).read_bytes(), mime,
+                             cache_control='public, max-age=604800, immutable' if mime == 'image/png' else 'no-store')
             except WebError as error:
                 self.respond(error.status, {'error': str(error)})
             except (BrokenPipeError, ConnectionResetError):
