@@ -234,18 +234,40 @@ class Service:
         }
 
     def rating(self):
-        """Список игроков по победам (для вкладки «Рейтинг»)."""
+        """Registered bot and Mini App players, deduplicated by Telegram ID."""
         with self.connect() as db:
             rows = db.execute('SELECT uid, name, profile FROM users').fetchall()
-        items = []
+        try:
+            with open(self.profiles_path, encoding='utf-8') as stream:
+                bot_profiles = json.load(stream)
+            if not isinstance(bot_profiles, dict):
+                bot_profiles = {}
+        except (OSError, ValueError):
+            bot_profiles = {}
+
+        def number(value):
+            return max(0, value) if isinstance(value, int) and not isinstance(value, bool) else 0
+
+        players = {}
+        for uid, prof in bot_profiles.items():
+            if not isinstance(prof, dict) or not prof.get('nickname'):
+                continue
+            players[str(uid)] = {'name': str(prof['nickname'])[:32],
+                                 'wins': number(prof.get('wins', 0)),
+                                 'coins': number(prof.get('coins', 0))}
         for row in rows:
-            prof = self._load_profile(row['profile'])
             if not row['name']:
                 continue
-            items.append({'name': str(row['name'])[:32], 'wins': prof.get('wins', 0),
-                          'coins': prof.get('coins', 0)})
-        items.sort(key=lambda x: (-x['wins'], -x['coins'], x['name']))
-        return items
+            prof = self._load_profile(row['profile'])
+            item = {'name': str(row['name'])[:32], 'wins': number(prof.get('wins', 0)),
+                    'coins': number(prof.get('coins', 0))}
+            previous = players.get(str(row['uid']))
+            if previous:
+                # Imported bot totals are already included; do not sum copies.
+                item['wins'] = max(item['wins'], previous['wins'])
+                item['name'] = previous['name']
+            players[str(row['uid'])] = item
+        return sorted(players.values(), key=lambda x: (-x['wins'], -x['coins'], x['name']))
 
     def cards_catalog(self, uid):
         """Все карты игры с пометкой легендарности и наличия в коллекции."""
