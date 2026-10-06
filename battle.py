@@ -382,8 +382,7 @@ class Game:
 
     def _resolve_offensive(self, target, pnum, opp, power, spell_name):
         if target == 'hero_opp':
-            dmg = min(opp.stress, power)
-            opp.stress = max(0, opp.stress - power)
+            dmg = self._damage_hero(self._opp(pnum), power)
             self._log(f"🎯 {self._name(pnum)}: {spell_name} бьёт героя на {dmg}")
             self._check_win_opp(opp)
         else:
@@ -553,6 +552,7 @@ class Game:
         p = self.players[pnum]
         dmg = min(p.stress, amount)
         p.stress = max(0, p.stress - amount)
+        p._damaged_total = getattr(p, '_damaged_total', 0) + max(0, dmg)
         return dmg
 
     def _heal_hero(self, pnum, amount):
@@ -560,6 +560,7 @@ class Game:
         before = p.stress
         p.stress = min(p.stress + amount, self.MAX_STRESS)
         self._healed_total = getattr(self, "_healed_total", 0) + max(0, p.stress - before)
+        p._healed_total = getattr(p, '_healed_total', 0) + max(0, p.stress - before)
 
     # ---------- герой ----------
 

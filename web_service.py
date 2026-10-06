@@ -159,6 +159,7 @@ class Service:
         game = load_game(json.loads(row['snapshot']))
         me = 1 if row['p1'] == uid else 2
         room["events"] = getattr(game, "_web_events", [])
+        room['visual_events'] = getattr(game, '_visual_events', [])
         room["player_number"] = me
         def side(number):
             p = game.players[number]
@@ -172,7 +173,7 @@ class Service:
                             targets.append(target)
                         except BattleError:
                             pass
-                board.append({'index': index, 'card': u.card, 'name': u.name, 'attack': u.attack,
+                board.append({'index': index, 'uid': u._visual_id, 'card': u.card, 'name': u.name, 'attack': u.attack,
                               'hp': u.hp, 'max_hp': u.max_hp, 'status': u.status, 'asleep': u.asleep,
                               'stunned': u.stunned, 'frozen': u.freeze_cycles, 'attacked': u.attacked,
                               'deadline': u.timer if u.status == 'дедлайн' else None,

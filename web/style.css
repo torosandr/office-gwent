@@ -43,3 +43,11 @@
 /* Persistent global sound control. */
 .sound-toggle{min-width:42px;min-height:42px;padding:8px;flex-shrink:0;font-size:21px;line-height:1}
 .sound-toggle:focus-visible{outline:2px solid #efc66d;outline-offset:3px}
+
+/* Effects sit above the board without intercepting input or changing layout. */
+.fx-layer{position:fixed;inset:0;z-index:35;pointer-events:none;overflow:hidden}
+.fx-ghost{position:absolute!important;margin:0!important;pointer-events:none!important;box-sizing:border-box;min-height:0;z-index:1}
+.fx-number{position:absolute;z-index:4;font-size:clamp(24px,4vw,36px);font-weight:900;white-space:nowrap;line-height:1;text-shadow:0 2px 3px #061016,1px 0 #061016,-1px 0 #061016;transform:translate(-50%,-50%)}
+.fx-damage{color:#ff8a80}.fx-heal{color:#86efb5}.fx-block{color:#ffe09a;font-size:24px}
+.fx-bolt{position:absolute;width:15px;height:15px;border-radius:50%;background:#e8dcff;box-shadow:0 0 12px 5px #af8cff,0 0 24px 10px #8567d590;z-index:3}
+.fx-bolt-heal{background:#d4ffe5;box-shadow:0 0 12px 5px #86efb5,0 0 24px 10px #64ce9490}

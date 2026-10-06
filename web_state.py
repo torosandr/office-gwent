@@ -37,9 +37,11 @@ def load_game(data):
     game.rng = random.Random()
     game.rng.setstate(tuples(data['rng']))
     units = []
-    for attributes in data['units']:
+    for index, attributes in enumerate(data['units']):
         unit = Unit.__new__(Unit)
         unit.__dict__.update(attributes)
+        # Deterministic fallback keeps old snapshots stable until next save.
+        unit.__dict__.setdefault('_visual_id', f'legacy-{index}')
         units.append(unit)
     game.players = {}
     for number, attributes in data['players'].items():

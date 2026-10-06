@@ -1,9 +1,11 @@
 from cards import get as card_info
+import uuid
 
 class Unit:
     """Существо на столе игрока."""
 
     def __init__(self, card_id):
+        self._visual_id = uuid.uuid4().hex
         info = card_info(card_id)
         self.card = card_id
         self.name = info.get('name', card_id)
@@ -63,10 +65,12 @@ class Unit:
         Аурное существо (посудомойка) не может умереть от обычного урона — hp не опускается ниже 1."""
         if self.status == 'пенка':
             self.status = None  # щит снят
+            self._blocked_total = getattr(self, '_blocked_total', 0) + 1
             return 0
         floor = 1 if self.indestructible else 0
         actual = min(amount, self.hp - floor)
         self.hp -= actual
+        self._damaged_total = getattr(self, '_damaged_total', 0) + max(0, actual)
         return actual
 
     def heal(self, amount):

@@ -41,11 +41,13 @@ function accept(data) {
   if (data._seq < appliedSequence) return;
   appliedSequence = data._seq;
   if (state?.room?.code !== data.room?.code || state?.room?.version !== data.room?.version) selection = null;
+  const visualBatch = window.GameAnimation.prepare(data.room);
   window.GameSound.accept(data.room);
   state = data;
   document.querySelector('#avatar').textContent = data.profile.name.slice(0,2).toUpperCase();
   const key = JSON.stringify([data.profile, data.room?.code, data.room?.version]);
   if (key !== renderKey) { renderKey = key; render(); }
+  window.GameAnimation.play(visualBatch, data.room);
 }
 async function refresh() {
   if (!token || busy || polling || view !== 'lobby') return;
@@ -66,9 +68,10 @@ function genRequestId() {
 async function mutate(path, data={}) {
   if (busy) return;
   busy = true; app.classList.add('busy');
-  try { accept(await api(path, {...data, request_id:genRequestId()})); }
+  let accepted = false;
+  try { accept(await api(path, {...data, request_id:genRequestId()})); accepted = true; }
   catch (error) { toast(error.message); }
-  finally { busy = false; app.classList.remove('busy'); if(state?.room?.phase === 'active') render(); await refresh(); }
+  finally { busy = false; app.classList.remove('busy'); if(!accepted && state?.room?.phase === 'active') render(); await refresh(); }
 }
 function localLink() {
   return config.local ? `<a class="local-link" href="/?seat=${seat === '1' ? '2' : '1'}" target="_blank" rel="noopener">Открыть окно второго игрока</a>` : '';
@@ -184,18 +187,19 @@ function canTarget(side, index) {
   const own = ['хил_цель','сокращение'].includes(selection.status);
   return side === (own ? 'me' : 'opponent') && selection.targets.includes(index === 'hero' ? (own ? 'hero_self' : 'hero_opp') : String(index));
 }
+function effectPlayer(side) { return side === 'me' ? state.room.player_number : 3-state.room.player_number; }
 function hero(side, player) {
-  return `<div class="hero-row ${canTarget(side,'hero') ? 'target' : ''}" ${canTarget(side,'hero') ? `role="button" tabindex="0" data-target="${side}:hero" aria-label="Выбрать героя ${esc(player.name)}"` : ''}><div class="hero-info"><span class="hero-face">${side === 'me' ? '🧑‍💼' : '👤'}</span><div><div class="hero-name">${esc(player.name)}${side === 'me' ? ' · вы' : ''}</div><div class="hero-label">${esc(player.hero)}</div></div></div><div class="resources"><span class="resource stress" title="Стресс">♥ ${player.stress}/20</span><span class="resource coffee" title="Кофе">☕ ${player.coffee}/10</span></div></div>`;
+  return `<div data-fx-key="p${effectPlayer(side)}:hero" class="hero-row ${canTarget(side,'hero') ? 'target' : ''}" ${canTarget(side,'hero') ? `role="button" tabindex="0" data-target="${side}:hero" aria-label="Выбрать героя ${esc(player.name)}"` : ''}><div class="hero-info"><span class="hero-face">${side === 'me' ? '🧑‍💼' : '👤'}</span><div><div class="hero-name">${esc(player.name)}${side === 'me' ? ' · вы' : ''}</div><div class="hero-label">${esc(player.hero)}</div></div></div><div class="resources"><span class="resource stress" title="Стресс">♥ ${player.stress}/20</span><span class="resource coffee" title="Кофе">☕ ${player.coffee}/10</span></div></div>`;
 }
 function unitMarkup(side, unit) {
   const target = canTarget(side, unit.index), active = side === 'me' && unit.targets.length > 0;
   const tags = [unit.frozen ? '🧊 Заморожен' : '', unit.deadline != null ? `💣 Взрыв через ${unit.deadline}` : '', unit.stunned || unit.asleep ? '💤 Спит' : '', unit.attacked ? 'Уже атаковал' : '', unit.status === 'таунт' || unit.status === 'супер_таунт' ? '🛡 Защита' : ''].filter(Boolean);
   const info = {id:unit.card, name:unit.name, type:'creature', attack:unit.attack, hp:unit.hp, max_hp:unit.max_hp, status:unit.status, desc:unit.desc, deadline:unit.deadline, frozen:unit.frozen};
-  return `<button class="card unit ${target ? 'target' : ''} ${active ? 'ready' : ''} ${selection?.kind === 'attack' && selection.index === unit.index && side === 'me' ? 'selected' : ''}" ${target ? `data-target="${side}:${unit.index}"` : `data-unit="${side}:${unit.index}"`} ${infoAttr(info)} title="${esc(unit.desc)}" aria-label="${esc(unit.name)}, атака ${unit.attack}, здоровье ${unit.hp}"><span class="art">${icon(unit.card)}</span>${unit.deadline != null ? `<span class="deadline-chip">💣 ${unit.deadline}</span>` : ''}<span class="name">${esc(unit.name)}</span><span class="unit-status">${esc(tags.join(' · '))}</span><span class="stats"><span>⚔ ${unit.attack}</span><span>♥ ${unit.hp}</span></span></button>`;
+  return `<button data-fx-key="p${effectPlayer(side)}:u${esc(unit.uid)}" class="card unit ${target ? 'target' : ''} ${active ? 'ready' : ''} ${selection?.kind === 'attack' && selection.index === unit.index && side === 'me' ? 'selected' : ''}" ${target ? `data-target="${side}:${unit.index}"` : `data-unit="${side}:${unit.index}"`} ${infoAttr(info)} title="${esc(unit.desc)}" aria-label="${esc(unit.name)}, атака ${unit.attack}, здоровье ${unit.hp}"><span class="art">${icon(unit.card)}</span>${unit.deadline != null ? `<span class="deadline-chip">💣 ${unit.deadline}</span>` : ''}<span class="name">${esc(unit.name)}</span><span class="unit-status">${esc(tags.join(' · '))}</span><span class="stats"><span>⚔ ${unit.attack}</span><span>♥ ${unit.hp}</span></span></button>`;
 }
 function cardMarkup(card) {
   const info = {id:card.id, name:card.name, type:card.type, cost:card.cost, attack:card.attack, health:card.health, status:card.status, desc:card.desc, legendary:card.legendary};
-  return `<button class="card ${card.type === 'spell' ? 'spell' : ''} ${card.playable ? 'ready' : 'unavailable'} ${selection?.kind === 'cast' && selection.index === card.index ? 'selected' : ''}" data-card="${card.index}" ${infoAttr(info)} aria-label="${esc(card.name)}, ${card.cost} кофе"><span class="cost">${card.cost}</span><span class="art">${icon(card.id)}</span><span class="name">${esc(card.name)}</span><span class="desc">${esc(card.desc)}</span><span class="stats">${card.type === 'creature' ? `<span>⚔ ${card.attack}</span><span>♥ ${card.health}</span>` : '<span>✦ Заклинание</span>'}</span></button>`;
+  return `<button data-fx-key="p${state.room.player_number}:h${card.index}" class="card ${card.type === 'spell' ? 'spell' : ''} ${card.playable ? 'ready' : 'unavailable'} ${selection?.kind === 'cast' && selection.index === card.index ? 'selected' : ''}" data-card="${card.index}" ${infoAttr(info)} aria-label="${esc(card.name)}, ${card.cost} кофе"><span class="cost">${card.cost}</span><span class="art">${icon(card.id)}</span><span class="name">${esc(card.name)}</span><span class="desc">${esc(card.desc)}</span><span class="stats">${card.type === 'creature' ? `<span>⚔ ${card.attack}</span><span>♥ ${card.health}</span>` : '<span>✦ Заклинание</span>'}</span></button>`;
 }
 function renderGame(r) {
   const ended = r.phase === 'finished';
