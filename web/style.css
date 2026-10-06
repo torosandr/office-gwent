@@ -96,3 +96,9 @@
 .paint-face .paint-cost{left:14.65%;top:13.85%}
 .paint-face .paint-attack{left:16%;top:87.4%}
 .paint-face .paint-health{left:83.35%;top:87.4%}
+
+.paint-spell .paint-attack,.paint-spell .paint-health{display:none}
+.paint-face.paint-spell .paint-desc{top:63%;height:25%;font-size:5.2cqw}
+
+.paint-face .paint-desc.long-description{font-size:4.2cqw;line-height:1.15}
+.paint-face .paint-name.long-name{font-size:4.4cqw}
