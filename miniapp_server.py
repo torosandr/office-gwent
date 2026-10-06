@@ -92,16 +92,16 @@ def make_server(service, host='0.0.0.0', port=8765, bot=None):
                          '/sounds.js': ('sounds.js', 'text/javascript; charset=utf-8'),
                          '/animations.js': ('animations.js', 'text/javascript; charset=utf-8'),
                          '/style.css': ('style.css', 'text/css; charset=utf-8'),
-                         '/art/trainee-v1.png': ('art/trainee-v1.png', 'image/png'),
-                         '/art/coffee-machine-v1.png': ('art/coffee-machine-v1.png', 'image/png'),
-                         '/art/deadline-v1.png': ('art/deadline-v1.png', 'image/png'),
-                         '/art/meeting-v1.png': ('art/meeting-v1.png', 'image/png')}
-                files.update({'/art/drone-v1.png': ('art/drone-v1.png', 'image/png'),'/art/women-meeting-v1.png': ('art/women-meeting-v1.png', 'image/png'),'/art/expired-v1.png': ('art/expired-v1.png', 'image/png'),'/art/smoke-v1.png': ('art/smoke-v1.png', 'image/png'),'/art/contest-panini-v1.png': ('art/contest-panini-v1.png', 'image/png'),'/art/espresso-v1.png': ('art/espresso-v1.png', 'image/png'),'/art/cherry-panini-v1.png': ('art/cherry-panini-v1.png', 'image/png'),'/art/vegetable-panini-v1.png': ('art/vegetable-panini-v1.png', 'image/png'),'/art/printer-v1.png': ('art/printer-v1.png', 'image/png'),'/art/meeting-spell-v1.png': ('art/meeting-spell-v1.png', 'image/png'),'/art/cappuccino-v1.png': ('art/cappuccino-v1.png', 'image/png'),'/art/anticipation-v1.png': ('art/anticipation-v1.png', 'image/png'),'/art/stepan-v1.png': ('art/stepan-v1.png', 'image/png'),'/art/buckwheat-v1.png': ('art/buckwheat-v1.png', 'image/png'),'/art/accountant-v1.png': ('art/accountant-v1.png', 'image/png'),'/art/workload-v1.png': ('art/workload-v1.png', 'image/png'),'/art/manager-v1.png': ('art/manager-v1.png', 'image/png'),'/art/guard-v1.png': ('art/guard-v1.png', 'image/png'),'/art/dishwasher-v1.png': ('art/dishwasher-v1.png', 'image/png'),'/art/tanya-v1.png': ('art/tanya-v1.png', 'image/png')})
+                         '/art/trainee-v1.webp': ('art/trainee-v1.webp', 'image/webp'),
+                         '/art/coffee-machine-v1.webp': ('art/coffee-machine-v1.webp', 'image/webp'),
+                         '/art/deadline-v1.webp': ('art/deadline-v1.webp', 'image/webp'),
+                         '/art/meeting-v1.webp': ('art/meeting-v1.webp', 'image/webp')}
+                files.update({'/art/drone-v1.webp': ('art/drone-v1.webp', 'image/webp'),'/art/women-meeting-v1.webp': ('art/women-meeting-v1.webp', 'image/webp'),'/art/expired-v1.webp': ('art/expired-v1.webp', 'image/webp'),'/art/smoke-v1.webp': ('art/smoke-v1.webp', 'image/webp'),'/art/contest-panini-v1.webp': ('art/contest-panini-v1.webp', 'image/webp'),'/art/espresso-v1.webp': ('art/espresso-v1.webp', 'image/webp'),'/art/cherry-panini-v1.webp': ('art/cherry-panini-v1.webp', 'image/webp'),'/art/vegetable-panini-v1.webp': ('art/vegetable-panini-v1.webp', 'image/webp'),'/art/printer-v1.webp': ('art/printer-v1.webp', 'image/webp'),'/art/meeting-spell-v1.webp': ('art/meeting-spell-v1.webp', 'image/webp'),'/art/cappuccino-v1.webp': ('art/cappuccino-v1.webp', 'image/webp'),'/art/anticipation-v1.webp': ('art/anticipation-v1.webp', 'image/webp'),'/art/stepan-v1.webp': ('art/stepan-v1.webp', 'image/webp'),'/art/buckwheat-v1.webp': ('art/buckwheat-v1.webp', 'image/webp'),'/art/accountant-v1.webp': ('art/accountant-v1.webp', 'image/webp'),'/art/workload-v1.webp': ('art/workload-v1.webp', 'image/webp'),'/art/manager-v1.webp': ('art/manager-v1.webp', 'image/webp'),'/art/guard-v1.webp': ('art/guard-v1.webp', 'image/webp'),'/art/dishwasher-v1.webp': ('art/dishwasher-v1.webp', 'image/webp'),'/art/tanya-v1.webp': ('art/tanya-v1.webp', 'image/webp')})
                 if path not in files:
                     raise WebError('Страница не найдена.', 404)
                 name, mime = files[path]
                 self.respond(200, (ROOT / 'web' / name).read_bytes(), mime,
-                             cache_control='public, max-age=604800, immutable' if mime == 'image/png' else 'no-store')
+                             cache_control='public, max-age=604800, immutable' if mime == 'image/webp' else 'no-store')
             except WebError as error:
                 self.respond(error.status, {'error': str(error)})
             except (BrokenPipeError, ConnectionResetError):
