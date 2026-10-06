@@ -56,13 +56,13 @@
 .card.painted-card{position:relative;display:block;aspect-ratio:2/3;min-height:0;padding:0;border:0;border-radius:12px;background:transparent;box-shadow:none;flex-basis:180px;width:180px;gap:0;color:#292015;isolation:isolate}
 .paint-image{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
 .painted-card .paint-cost,.painted-card .paint-name,.painted-card .paint-desc,.painted-card .paint-attack,.painted-card .paint-health,.painted-card .paint-status{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none;overflow-wrap:anywhere}
-.paint-cost{left:5%;width:17%;top:11.5%;height:7.2%;font-size:11cqw;font-weight:900;line-height:1}
-.paint-name{left:12%;width:77%;top:51.6%;height:8.1%;font-size:6.3cqw;font-weight:850;line-height:1.04}
-.paint-desc{left:14%;width:73%;top:63%;height:19.5%;font-size:5.5cqw;font-weight:550;line-height:1.2}
-.paint-attack,.paint-health{width:18%;top:83.8%;height:7.2%;font-size:11.5cqw;font-weight:900;line-height:1}
+.paint-cost{left:5%;width:17%;top:11.5%;height:7.2%;font-size:calc(11 * var(--card-unit, 1.65px));font-weight:900;line-height:1}
+.paint-name{left:12%;width:77%;top:51.6%;height:8.1%;font-size:calc(6.3 * var(--card-unit, 1.65px));font-weight:850;line-height:1.04}
+.paint-desc{left:14%;width:73%;top:63%;height:19.5%;font-size:calc(5.5 * var(--card-unit, 1.65px));font-weight:550;line-height:1.2}
+.paint-attack,.paint-health{width:18%;top:83.8%;height:7.2%;font-size:calc(11.5 * var(--card-unit, 1.65px));font-weight:900;line-height:1}
 .paint-attack{left:7.5%}.paint-health{right:7.5%}.paint-health.wounded{color:#a71f22}
-.painted-card .wide-number{font-size:8.5cqw}.painted-card .tiny-number{font-size:6cqw}
-.paint-status{left:28%;width:44%;top:87%;height:6%;font-size:4.6cqw;line-height:1.1;color:#f8e7c8;background:#132c2ec9;border-radius:4px;padding:1px}
+.painted-card .wide-number{font-size:calc(8.5 * var(--card-unit, 1.65px))}.painted-card .tiny-number{font-size:calc(6 * var(--card-unit, 1.65px))}
+.paint-status{left:28%;width:44%;top:87%;height:6%;font-size:calc(4.6 * var(--card-unit, 1.65px));line-height:1.1;color:#f8e7c8;background:#132c2ec9;border-radius:4px;padding:1px}
 .card.painted-card.ready{outline:1px solid #d4b66a;outline-offset:2px}.card.painted-card.selected,.card.painted-card.target{outline:3px solid var(--gold);outline-offset:2px}
 .card.unit.painted-card{flex-basis:150px;width:150px;min-height:0;padding:0}
 .board:has(.painted-card){min-height:250px}
@@ -73,14 +73,14 @@
 .card-info.illustrated-info{max-height:75vh;padding:0;gap:4px;width:min(280px,72vw)}
 .card-info .card-zoom{width:100%;flex:none;max-width:none}
 #cardinfo:has(.illustrated-info){max-width:340px;padding:14px}
-@media(max-width:560px){.card.painted-card{flex-basis:165px;width:165px}.card.unit.painted-card{flex-basis:130px;width:130px}.board:has(.painted-card){min-height:215px}.paint-desc{font-size:5.7cqw}}
+@media(max-width:560px){.card.painted-card{flex-basis:165px;width:165px}.card.unit.painted-card{flex-basis:130px;width:130px}.board:has(.painted-card){min-height:215px}.paint-desc{font-size:calc(5.7 * var(--card-unit, 1.65px))}}
 
 /* Keep overlays tied to the same box as the artwork in iOS WebViews. */
-.paint-face{position:relative;display:block;width:100%;aspect-ratio:2/3;container-type:inline-size;overflow:hidden;text-size-adjust:none;-webkit-text-size-adjust:none}
+.paint-face{position:relative;display:block;width:100%;aspect-ratio:2/3;overflow:hidden;text-size-adjust:none;-webkit-text-size-adjust:none}
 .paint-face .paint-image{position:absolute;inset:0;width:100%;height:100%}
 .paint-face .paint-name,.paint-face .paint-desc{overflow:hidden}
-.paint-face .paint-name{font-size:5.5cqw;left:13%;width:75%;height:7.8%}
-.paint-face .paint-desc{font-size:5.2cqw;left:15%;width:70%;height:20%}
+.paint-face .paint-name{font-size:calc(5.5 * var(--card-unit, 1.65px));left:13%;width:75%;height:7.8%}
+.paint-face .paint-desc{font-size:calc(5.2 * var(--card-unit, 1.65px));left:15%;width:70%;height:20%}
 .paint-face .paint-cost{left:7.5%;width:14%;top:11%;height:7%}
 .paint-face .paint-attack{left:9%;width:15%}
 .paint-face .paint-health{right:9%;width:15%}
@@ -92,13 +92,25 @@
 }
 .card-info .card.painted-card.card-zoom{width:100%;flex:none} #cardinfo{max-width:calc(100vw - 24px)} #cardinfo:has(.illustrated-info){width:min(368px,calc(100vw - 24px));max-width:calc(100vw - 24px)} .card-info.illustrated-info{width:100%;overflow-x:hidden}
 /* Centres measured on the 750 × 1125 frame; compensate the font baseline. */
-.paint-face .paint-cost,.paint-face .paint-attack,.paint-face .paint-health{right:auto;width:16%;height:8%;transform:translate(-50%,-50%);padding:0 0 1.4cqw;box-sizing:border-box}
+.paint-face .paint-cost,.paint-face .paint-attack,.paint-face .paint-health{right:auto;width:16%;height:8%;transform:translate(-50%,-50%);padding:0 0 calc(1.4 * var(--card-unit, 1.65px));box-sizing:border-box}
 .paint-face .paint-cost{left:14.65%;top:13.85%}
 .paint-face .paint-attack{left:16%;top:87.4%}
 .paint-face .paint-health{left:83.35%;top:87.4%}
 
 .paint-spell .paint-attack,.paint-spell .paint-health{display:none}
-.paint-face.paint-spell .paint-desc{top:63%;height:25%;font-size:5.2cqw}
+.paint-face.paint-spell .paint-desc{top:63%;height:25%;font-size:calc(5.2 * var(--card-unit, 1.65px))}
 
-.paint-face .paint-desc.long-description{font-size:4.2cqw;line-height:1.15}
-.paint-face .paint-name.long-name{font-size:4.4cqw}
+.paint-face .paint-desc.long-description{font-size:calc(4.2 * var(--card-unit, 1.65px));line-height:1.15}
+.paint-face .paint-name.long-name{font-size:calc(4.4 * var(--card-unit, 1.65px))}
+
+/* Reserve the complete artwork box without relying on aspect-ratio support. */
+.paint-face{aspect-ratio:auto}
+.paint-face::before{content:"";display:block;padding-top:150%}
+@supports not (font-size:calc(1 * var(--card-unit, 1.65px))){
+ .paint-face .paint-name{font-size:12px}.paint-face .paint-name.long-name{font-size:10px}
+ .paint-face .paint-desc{font-size:11px}.paint-face .paint-desc.long-description{font-size:9px}
+ .paint-face .paint-cost,.paint-face .paint-attack,.paint-face .paint-health{font-size:24px;padding-bottom:2px}
+ .paint-face .wide-number{font-size:18px}.paint-face .tiny-number{font-size:13px}
+ .paint-face .paint-status{font-size:9px}
+}
+@media(max-width:560px){.deck-grid,.deck-pool{grid-template-columns:repeat(2,minmax(0,1fr))}.deck-grid .card.unit.painted-card,.deck-pool .card.unit.painted-card{width:100%;max-width:none;min-width:0}}

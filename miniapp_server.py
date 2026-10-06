@@ -100,11 +100,12 @@ def make_server(service, host='0.0.0.0', port=8765, bot=None):
                 files.update({'/art/tester-v1.webp': ('art/tester-v1.webp', 'image/webp'),'/art/reduction-v1.webp': ('art/reduction-v1.webp', 'image/webp'),'/art/beer-v1.webp': ('art/beer-v1.webp', 'image/webp'),'/art/friday-v1.webp': ('art/friday-v1.webp', 'image/webp')})
                 files.update({'/art/laziness-v1.webp': ('art/laziness-v1.webp', 'image/webp'),'/art/indifference-v1.webp': ('art/indifference-v1.webp', 'image/webp'),'/art/marketer-v1.webp': ('art/marketer-v1.webp', 'image/webp')})
                 files['/art/chicken-panini-v1.webp'] = ('art/chicken-panini-v1.webp', 'image/webp')
+                files.update({key.replace('.webp', '.png'): (name.replace('.webp', '.png'), 'image/png') for key, (name, mime) in list(files.items()) if mime == 'image/webp'})
                 if path not in files:
                     raise WebError('Страница не найдена.', 404)
                 name, mime = files[path]
                 self.respond(200, (ROOT / 'web' / name).read_bytes(), mime,
-                             cache_control='public, max-age=604800, immutable' if mime == 'image/webp' else 'no-store')
+                             cache_control='public, max-age=604800, immutable' if mime in ('image/webp', 'image/png') else 'no-store')
             except WebError as error:
                 self.respond(error.status, {'error': str(error)})
             except (BrokenPipeError, ConnectionResetError):

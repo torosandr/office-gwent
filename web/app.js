@@ -18,7 +18,7 @@ function paintedFace(card, status='') {
   const creature = card.type === 'creature';
   const hp = card.hp ?? card.health;
   const digits = value => String(value ?? '').length > 3 ? ' tiny-number' : String(value ?? '').length > 2 ? ' wide-number' : '';
-  return `<div class="paint-face ${creature ? '' : 'paint-spell'}"><img class="paint-image" src="/art/${image}" alt="" aria-hidden="true" draggable="false"><span class="paint-cost${digits(card.cost)}">${esc(card.cost ?? 0)}</span><span class="paint-name${(card.name || '').length > 22 ? ' long-name' : ''}">${esc(card.name)}</span><span class="paint-desc${(card.desc || '').length > 110 ? ' long-description' : ''}">${esc(card.desc || '')}</span><span class="paint-attack${digits(card.attack)}">${creature ? esc(card.attack ?? 0) : '✦'}</span><span class="paint-health${creature && card.hp != null && card.hp < card.max_hp ? ' wounded' : ''}${digits(hp)}">${creature ? esc(hp ?? 0) : '—'}</span>${status ? `<span class="paint-status">${esc(status)}</span>` : ''}</div>`;
+  return `<div class="paint-face ${creature ? '' : 'paint-spell'}"><img class="paint-image" loading="lazy" decoding="async" src="/art/${image}" alt="" aria-hidden="true" draggable="false"><span class="paint-cost${digits(card.cost)}">${esc(card.cost ?? 0)}</span><span class="paint-name${(card.name || '').length > 22 ? ' long-name' : ''}">${esc(card.name)}</span><span class="paint-desc${(card.desc || '').length > 110 ? ' long-description' : ''}">${esc(card.desc || '')}</span><span class="paint-attack${digits(card.attack)}">${creature ? esc(card.attack ?? 0) : '✦'}</span><span class="paint-health${creature && card.hp != null && card.hp < card.max_hp ? ' wounded' : ''}${digits(hp)}">${creature ? esc(hp ?? 0) : '—'}</span>${status ? `<span class="paint-status">${esc(status)}</span>` : ''}</div>`;
 }
 const icon = cid => icons[cid] || (cid?.includes('панини') ? '🥪' : '🃏');
 
@@ -324,3 +324,29 @@ async function start() {
 }
 start();
 
+
+// Recover from WebP decoding failures in older embedded browsers, once per image.
+document.addEventListener('error', event => {
+  const img = event.target;
+  if (!(img instanceof HTMLImageElement) || !img.classList.contains('paint-image')) return;
+  const path = new URL(img.src, location.href).pathname;
+  if (path.startsWith('/art/') && path.endsWith('.webp')) {
+    img.src = path.replace(/\.webp$/, '.png');
+  }
+}, true);
+
+// Avoid size containment on card contents: embedded WebKit can collapse the box.
+const cardSizes = new ResizeObserver(entries => {
+  for (const entry of entries) entry.target.style.setProperty('--card-unit', `${entry.contentRect.width / 100}px`);
+});
+let cardSizeFrame;
+new MutationObserver(() => {
+  cancelAnimationFrame(cardSizeFrame);
+  cardSizeFrame = requestAnimationFrame(() => {
+    cardSizes.disconnect();
+    document.querySelectorAll('.paint-face').forEach(face => {
+      face.style.setProperty('--card-unit', `${face.getBoundingClientRect().width / 100}px`);
+      cardSizes.observe(face);
+    });
+  });
+}).observe(document.body, {childList:true, subtree:true});
