@@ -53,7 +53,7 @@
 .fx-bolt-heal{background:#d4ffe5;box-shadow:0 0 12px 5px #86efb5,0 0 24px 10px #64ce9490}
 
 /* Supplied full card frames; all game values remain live HTML overlays. */
-.card.painted-card{position:relative;display:block;container-type:inline-size;aspect-ratio:2/3;min-height:0;padding:0;border:0;border-radius:12px;background:transparent;box-shadow:none;flex-basis:180px;width:180px;gap:0;color:#292015;isolation:isolate}
+.card.painted-card{position:relative;display:block;aspect-ratio:2/3;min-height:0;padding:0;border:0;border-radius:12px;background:transparent;box-shadow:none;flex-basis:180px;width:180px;gap:0;color:#292015;isolation:isolate}
 .paint-image{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
 .painted-card .paint-cost,.painted-card .paint-name,.painted-card .paint-desc,.painted-card .paint-attack,.painted-card .paint-health,.painted-card .paint-status{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:none;overflow-wrap:anywhere}
 .paint-cost{left:5%;width:17%;top:11.5%;height:7.2%;font-size:11cqw;font-weight:900;line-height:1}
@@ -74,3 +74,20 @@
 .card-info .card-zoom{width:100%;flex:none;max-width:none}
 #cardinfo:has(.illustrated-info){max-width:340px;padding:14px}
 @media(max-width:560px){.card.painted-card{flex-basis:165px;width:165px}.card.unit.painted-card{flex-basis:130px;width:130px}.board:has(.painted-card){min-height:215px}.paint-desc{font-size:5.7cqw}}
+
+/* Keep overlays tied to the same box as the artwork in iOS WebViews. */
+.paint-face{position:relative;display:block;width:100%;aspect-ratio:2/3;container-type:inline-size;overflow:hidden;text-size-adjust:none;-webkit-text-size-adjust:none}
+.paint-face .paint-image{position:absolute;inset:0;width:100%;height:100%}
+.paint-face .paint-name,.paint-face .paint-desc{overflow:hidden}
+.paint-face .paint-name{font-size:5.5cqw;left:13%;width:75%;height:7.8%}
+.paint-face .paint-desc{font-size:5.2cqw;left:15%;width:70%;height:20%}
+.paint-face .paint-cost{left:7.5%;width:14%;top:11%;height:7%}
+.paint-face .paint-attack{left:9%;width:15%}
+.paint-face .paint-health{right:9%;width:15%}
+@media(max-width:560px){
+ .cards-grid{grid-template-columns:minmax(0,1fr);gap:24px}
+ .paint-catalog-item{width:100%;min-width:0}
+ .paint-catalog-item .card.painted-card{width:100%;max-width:360px;flex:none;margin:0 auto}
+ .card-info.illustrated-info{width:min(340px,80vw)}
+}
+.card-info .card.painted-card.card-zoom{width:100%;flex:none} #cardinfo{max-width:calc(100vw - 24px)} #cardinfo:has(.illustrated-info){width:min(368px,calc(100vw - 24px));max-width:calc(100vw - 24px)} .card-info.illustrated-info{width:100%;overflow-x:hidden}
