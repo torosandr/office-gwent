@@ -114,3 +114,14 @@
  .paint-face .paint-status{font-size:9px}
 }
 @media(max-width:560px){.deck-grid,.deck-pool{grid-template-columns:repeat(2,minmax(0,1fr))}.deck-grid .card.unit.painted-card,.deck-pool .card.unit.painted-card{width:100%;max-width:none;min-width:0}}
+/* Let the deck editor use the page instead of a small nested scroll area. */
+.deck-grid{min-height:0;align-content:start}
+.deck-grid > .muted{grid-column:1/-1;justify-self:start;margin:4px 0 8px}
+.deck-pool{max-height:none;overflow:visible}
+.deck-field{margin-bottom:20px}
+@media(max-width:560px){
+ body:has(.deck-field) main{padding-bottom:8px}
+ body:has(.deck-field) footer{display:none}
+ .deck-field{margin-bottom:16px}
+ .deck-box{margin-bottom:16px}
+}
