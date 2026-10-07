@@ -72,7 +72,8 @@ def make_server(service, host='0.0.0.0', port=8765, bot=None):
                 self.check_origin()
                 path = urlsplit(self.path).path
                 if path == '/api/config':
-                    return self.respond(200, {'local': service.local, 'telegram': bool(service.bot_token)})
+                    return self.respond(200, {'local': service.local, 'telegram': bool(service.bot_token),
+                                              'storage': 'postgresql' if service.database.postgres else 'sqlite'})
                 if path == '/api/state':
                     return self.respond(200, service.state(self.uid()))
                 if path == '/api/menu':
@@ -179,15 +180,22 @@ def main():
     if not args.local and not token:
         raise SystemExit('TELEGRAM_BOT_TOKEN не задан. Укажите токен бота в переменных окружения.')
     service = Service(args.database, local=args.local, bot_token='' if args.local else token,
-                      profiles_path=ROOT / config.FILES['users'])
+                      profiles_path=ROOT / config.FILES['users'],
+                      database_url=None if args.local else os.environ.get('DATABASE_URL'))
+    if service.database.postgres:
+        from cloud_storage import seed_profiles
+        seed_profiles(service)
     # Текстовый бот (webhook) живёт в том же процессе, если есть токен и включён.
     bot = None
     if not args.local:
         try:
             from bot_runtime import build_bot_runtime
-            bot = build_bot_runtime()
+            bot = build_bot_runtime(service)
         except Exception as error:
-            print('webhook bot disabled:', error, file=sys.stderr)
+            if service.database.postgres:
+                # Do not silently launch with a broken durable bot store.
+                raise RuntimeError('Не удалось подключить хранилище бота.') from None
+            print('webhook bot disabled:', type(error).__name__, file=sys.stderr)
     if bot is not None:
         bot.games.promo_service = service
     server = make_server(service, port=args.port, bot=bot)

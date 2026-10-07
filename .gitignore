@@ -5,6 +5,11 @@
 users_live.json
 users_test.json
 miniapp.sqlite3
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+.env
+office-gwent-backup-*.json
 backups/
 
 # Кэш Python

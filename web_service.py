@@ -4,7 +4,6 @@ import hmac
 import json
 import re
 import secrets
-import sqlite3
 import time
 from contextlib import contextmanager
 from urllib.parse import parse_qsl
@@ -14,6 +13,7 @@ from config import BASE_CARD_IDS, HEROES, WIN_COINS, SHOP_PRICES, LEGENDARY_CARD
 from web_state import dump_game, load_game
 from web_events import capture_effects, record_effects
 from web_rewards import Rewards
+from database import Database
 
 
 class WebError(Exception):
@@ -46,36 +46,32 @@ def validate_telegram(init_data, token, now=None):
 
 
 class Service(Rewards):
-    def __init__(self, path, local=False, bot_token='', profiles_path=None):
+    def __init__(self, path, local=False, bot_token='', profiles_path=None, database_url=None):
         self.path, self.local, self.bot_token = str(path), local, bot_token
         self.profiles_path = profiles_path
-        with self.connect() as db:
+        self.database = Database(path, database_url)
+        with self.transaction() as db:
             db.executescript('''
                 PRAGMA journal_mode=WAL;
                 CREATE TABLE IF NOT EXISTS users(uid TEXT PRIMARY KEY, name TEXT NOT NULL, profile TEXT NOT NULL);
-                CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY, uid TEXT NOT NULL, expires REAL NOT NULL);
+                CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY, uid TEXT NOT NULL, expires DOUBLE PRECISION NOT NULL);
                 CREATE TABLE IF NOT EXISTS rooms(code TEXT PRIMARY KEY, p1 TEXT NOT NULL, p2 TEXT, phase TEXT NOT NULL,
                     snapshot TEXT, version INTEGER NOT NULL DEFAULT 0, awarded INTEGER NOT NULL DEFAULT 0);
                 CREATE TABLE IF NOT EXISTS membership(uid TEXT PRIMARY KEY, code TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS actions(uid TEXT, request_id TEXT, PRIMARY KEY(uid,request_id));
+                CREATE TABLE IF NOT EXISTS telegram_updates(update_id BIGINT PRIMARY KEY);
             ''')
 
         self.init_rewards()
 
     @contextmanager
     def connect(self):
-        db = sqlite3.connect(self.path, timeout=10)
-        db.row_factory = sqlite3.Row
-        try:
-            with db:
-                yield db
-        finally:
-            db.close()
+        with self.database.connect() as db:
+            yield db
 
     @contextmanager
     def transaction(self):
-        with self.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
+        with self.database.transaction() as db:
             yield db
 
     def authenticate(self, body, telegram=False):
@@ -121,6 +117,10 @@ class Service(Rewards):
 
     def _bot_profile(self, uid):
         """Ищет профиль игрока в users.json бота по id. Возвращает dict или None."""
+        if self.database.postgres:
+            # PostgreSQL is the single authority. Never merge an old seed file
+            # back into current inventory after a deploy.
+            return None
         try:
             with open(self.profiles_path, encoding='utf-8') as stream:
                 data = json.load(stream)
@@ -145,7 +145,7 @@ class Service(Rewards):
 
     def state(self, uid):
         with self.connect() as db:
-            db.execute('BEGIN')
+            db.execute('BEGIN' if not self.database.postgres else 'SET TRANSACTION ISOLATION LEVEL REPEATABLE READ')
             return self._state(db, uid)
 
     def _state(self, db, uid):
@@ -242,6 +242,8 @@ class Service(Rewards):
         with self.connect() as db:
             rows = db.execute('SELECT uid, name, profile FROM users').fetchall()
         try:
+            if self.database.postgres:
+                raise TypeError()
             with open(self.profiles_path, encoding='utf-8') as stream:
                 bot_profiles = json.load(stream)
             if not isinstance(bot_profiles, dict):

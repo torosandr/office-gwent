@@ -16,9 +16,14 @@ NO_PROXY = {'http': None, 'https': None}
 class BotRuntime:
     """Строит Handlers на общем users.json и обрабатывает апдейты из webhook."""
 
-    def __init__(self):
+    def __init__(self, service=None):
         self.update_lock = threading.RLock()
-        self.store = UserStore(FILES["users"])
+        self.service = service
+        if service is not None and service.database.postgres:
+            from cloud_storage import CloudUserStore
+            self.store = CloudUserStore(service)
+        else:
+            self.store = UserStore(FILES["users"])
         self.games = GameData()
         self.handlers = Handlers(self.store, self.games, build_menu)
 
@@ -29,7 +34,24 @@ class BotRuntime:
         if 'update_id' not in body:
             return None
         with self.update_lock:
-            handle_update(body, self.handlers)
+            if self.service is not None and self.service.database.postgres:
+                # Reload and write while holding the same lock as Mini App
+                # mutations. A failed update rolls back all profile changes.
+                try:
+                    with self.service.transaction() as db:
+                        update_id = body['update_id']
+                        if type(update_id) is not int:
+                            return None
+                        if db.execute('SELECT 1 FROM telegram_updates WHERE update_id=?', (update_id,)).fetchone():
+                            return None
+                        self.store.reload()
+                        handle_update(body, self.handlers)
+                        db.execute('INSERT INTO telegram_updates VALUES(?)', (update_id,))
+                except Exception:
+                    self.store.reload()
+                    raise
+            else:
+                handle_update(body, self.handlers)
         return None
 
     def set_webhook(self, url):
@@ -47,5 +69,5 @@ class BotRuntime:
             return False, 'Ошибка ответа Telegram.'
 
 
-def build_bot_runtime():
-    return BotRuntime() if TELEGRAM_TOKEN and 'ВАШ_ТОКЕН' not in TELEGRAM_TOKEN else None
+def build_bot_runtime(service=None):
+    return BotRuntime(service) if TELEGRAM_TOKEN and 'ВАШ_ТОКЕН' not in TELEGRAM_TOKEN else None

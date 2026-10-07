@@ -13,7 +13,7 @@ services:
     name: office-gwent
     runtime: python
     plan: free
-    buildCommand: ""
+    buildCommand: pip install -r requirements.txt
     startCommand: python miniapp_server.py
     healthCheckPath: /api/config
     envVars:

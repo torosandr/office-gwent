@@ -8,7 +8,7 @@ from config import FILES, HEROES, BASE_CARD_IDS, LEGENDARY_CARD_IDS
 
 class Rewards:
     def init_rewards(self):
-        with self.connect() as db:
+        with self.transaction() as db:
             db.executescript('''
               CREATE TABLE IF NOT EXISTS promo_claims(code TEXT, uid TEXT, PRIMARY KEY(code,uid));
               CREATE TABLE IF NOT EXISTS packs(id TEXT PRIMARY KEY, uid TEXT NOT NULL,
@@ -51,7 +51,7 @@ class Rewards:
 
     def my_packs(self, uid):
         with self.connect() as db:
-            rows = db.execute('SELECT id,name,cards FROM packs WHERE uid=? AND opened=0 ORDER BY rowid', (uid,)).fetchall()
+            rows = db.execute('SELECT id,name,cards FROM packs WHERE uid=? AND opened=0 ORDER BY id', (uid,)).fetchall()
         return [{'id': x['id'], 'name': x['name'], 'size': len(json.loads(x['cards']))} for x in rows]
 
     def redeem_promo(self, uid, code, immediate=False):

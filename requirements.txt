@@ -1,3 +1,4 @@
 # Зависимости сервера миниаппа + текстового бота (webhook).
 # requests нужен боту (bot_runtime.py) для вызова Telegram API (setWebhook).
 requests>=2.31
+psycopg[binary]>=3.2,<4
