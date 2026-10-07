@@ -5,7 +5,8 @@
 /* Р”РѕРїРѕР»РЅРµРЅРёСЏ: Р¶СѓСЂРЅР°Р», РґРµРґР»Р°Р№РЅ, РјРµРЅСЋ, РјР°РіР°Р·РёРЅ/РєРѕР»РѕРґР°/РєР°СЂС‚С‹ */
 .log-panel{display:block;max-height:220px;overflow:auto}
 .sidebar .log-panel{display:block;min-width:0}
-@media(max-width:900px){.sidebar{grid-row:3}.sidebar .log-panel{grid-column:1/-1;max-height:240px}}
+.sidebar,.sidebar .panel,.hand-area{min-width:0}
+@media(max-width:900px){.sidebar{grid-row:3;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.sidebar .log-panel{grid-column:1/-1;max-height:240px}}
 .log li{background:#0c1921;border:1px solid #2b414b;border-radius:8px;padding:8px 10px;font-size:.85rem;line-height:1.4}
 .deadline-chip{position:absolute;top:-8px;right:-8px;background:#613330;color:#ffd1cb;border-radius:12px;padding:2px 8px;font-size:.75rem;font-weight:700;z-index:3}
 .lobby-nav.extra{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
