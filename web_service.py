@@ -333,8 +333,9 @@ class Service(Rewards):
                     raise WebError('Карта не найдена.', 404)
                 if len(deck) >= 15:
                     raise WebError('В колоде уже 15 карт — максимум.')
-                if deck.count(card_id) >= 2:
-                    raise WebError('Нельзя больше 2 копий одной карты.')
+                limit = 1 if card_id in LEGENDARY_CARD_IDS else 2
+                if deck.count(card_id) >= limit:
+                    raise WebError('Легендарная карта может быть в колоде только одна.' if limit == 1 else 'Нельзя больше 2 копий одной карты.')
                 deck.append(card_id)
             elif op == 'remove':
                 if index is None or not (0 <= index < len(deck)):

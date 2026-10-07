@@ -32,6 +32,9 @@ class Rewards:
         for cid, count in original.get('collection', {}).items():
             if isinstance(count, int) and count > 0:
                 collection[cid] = max(collection.get(cid, 0), count)
+        for cid in LEGENDARY_CARD_IDS:
+            if collection.get(cid, 0) > 0:
+                collection[cid] = 1
         return collection
 
     def heroes(self, uid):
@@ -107,7 +110,7 @@ class Rewards:
     def _grant_pack(self, db, uid, p, cards, set_id):
         p['collection'] = self.collection_counts(uid, p)
         for cid in cards:
-            p['collection'][cid] = p['collection'].get(cid, 0) + 1
+            p['collection'][cid] = 1 if cid in LEGENDARY_CARD_IDS else p['collection'].get(cid, 0) + 1
         if set_id and set_id not in p.get('sets', []):
             p.setdefault('sets', []).append(set_id)
         self._save_profile(db, uid, p)
@@ -119,6 +122,7 @@ class Rewards:
             if not pack:
                 raise WebError('Пакетик не найден.', 404)
             cards = json.loads(pack['cards'])
+            cards = [cid for index, cid in enumerate(cards) if cid not in LEGENDARY_CARD_IDS or cid not in cards[:index]]
             if not pack['opened']:
                 p = self._profile_json(db, uid)
                 self._grant_pack(db, uid, p, cards, pack['set_id'])

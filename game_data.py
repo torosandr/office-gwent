@@ -32,7 +32,8 @@ class GameData:
         if card_id not in self.cards:
             return False
         user.setdefault('collection', {})
-        user['collection'][card_id] = user['collection'].get(card_id, 0) + count
+        total = user['collection'].get(card_id, 0) + count
+        user['collection'][card_id] = min(1, total) if card_id in LEGENDARY_CARD_IDS else total
         return True
 
     def grant_set(self, user, set_id):

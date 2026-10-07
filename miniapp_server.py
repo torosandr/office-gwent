@@ -183,8 +183,9 @@ def main():
                       profiles_path=ROOT / config.FILES['users'],
                       database_url=None if args.local else os.environ.get('DATABASE_URL'))
     if service.database.postgres:
-        from cloud_storage import seed_profiles
+        from cloud_storage import seed_profiles, migrate_stepan
         seed_profiles(service)
+        migrate_stepan(service)
     # Текстовый бот (webhook) живёт в том же процессе, если есть токен и включён.
     bot = None
     if not args.local:

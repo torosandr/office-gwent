@@ -45,6 +45,34 @@ def seed_profiles(service, merge_existing=False):
         db.execute('INSERT INTO storage_meta VALUES(?,?)', ('bot_seed_v1', '1'))
 
 
+def migrate_stepan(service):
+    """Keep the newly legendary Stepan once, including in saved decks."""
+    with service.transaction() as db:
+        if db.execute('SELECT 1 FROM storage_meta WHERE key=?', ('legendary_stepan_v1',)).fetchone():
+            return
+        for row in db.execute('SELECT uid,profile FROM users').fetchall():
+            profile = json.loads(row['profile'])
+            changed = False
+            if profile.get('collection', {}).get('степан', 0) > 1:
+                profile['collection']['степан'] = 1
+                changed = True
+            deck = profile.get('deck', []) or []
+            if deck.count('степан') > 1:
+                seen = False
+                clean = []
+                for cid in deck:
+                    if cid == 'степан':
+                        if seen:
+                            continue
+                        seen = True
+                    clean.append(cid)
+                profile['deck'] = clean
+                changed = True
+            if changed:
+                db.execute('UPDATE users SET profile=? WHERE uid=?', (json.dumps(profile, ensure_ascii=False), row['uid']))
+        db.execute('INSERT INTO storage_meta VALUES(?,?)', ('legendary_stepan_v1', '1'))
+
+
 class CloudUserStore(UserStore):
     def __init__(self, service):
         self.service = service

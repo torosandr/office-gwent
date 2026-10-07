@@ -237,7 +237,7 @@ function cardMarkup(card) {
 function renderGame(r) {
   const ended = r.phase === 'finished';
   const heroLabel = r.hero_info?.type === 'passive' ? 'Пассивная способность' : `Герой · ${r.hero_info?.active_cost ?? 2} ☕ / +${r.hero_info?.active_amount ?? 3} ♥`;
-  app.innerHTML = `<section class="game"><div class="game-heading"><div><span class="eyebrow">Офисный Гвинт</span><h1>${ended ? 'Партия завершена' : 'Перерыв затянулся.'}</h1></div><span class="pill">Комната <span class="code">${esc(r.code)}</span></span></div>${ended ? `<div class="result"><h2>${r.won ? 'Победа! 🏆' : 'В этот раз — за коллегой.'}</h2><p>${r.won ? '+20 монет. Отличная работа команды.' : 'Новая партия — новый шанс.'}</p><button id="back-lobby">В игровую</button></div>` : ''}<div class="game-layout"><section class="table" aria-label="Игровой стол">${hero('opponent',r.opponent)}<div class="board" aria-label="Существа соперника">${r.opponent.board.map(u => unitMarkup('opponent',u)).join('') || '<span class="empty-board">Соперник ещё никого не вызвал</span>'}</div><div class="divider"><span class="turn-label ${r.my_turn && !ended ? '' : 'wait'}">${ended ? 'КОНЕЦ ПАРТИИ' : r.my_turn ? (r.skip ? 'ПРОПУСК ХОДА · ПОКУР' : 'ВАШ ХОД') : 'ХОД СОПЕРНИКА'}</span></div><div class="board" aria-label="Ваши существа">${r.me.board.map(u => unitMarkup('me',u)).join('') || '<span class="empty-board">Ваша команда появится здесь</span>'}</div>${hero('me',r.me)}${selection ? `<div class="action-hint"><span>${selection.kind === 'attack' ? 'Выберите цель атаки' : 'Выберите подсвеченную цель'}</span><button id="cancel-selection" class="ghost">Отмена</button></div>` : ''}</section><aside class="sidebar"><section class="panel"><h2>${r.my_turn ? 'Ваше решение' : 'Ход коллеги'}</h2><button class="end-turn" id="end" ${!r.my_turn || ended ? 'disabled' : ''}>Завершить ход</button><button class="secondary hero-button" id="hero" ${!r.hero_ready || ended ? 'disabled' : ''}>${esc(heroLabel)}</button><button class="ghost hero-button" id="concede" ${ended ? 'disabled' : ''}>Сдаться</button></section><section class="panel"><h2>За столом</h2><p class="muted tiny">В вашей колоде: ${r.me.deck_count}<br>Карт у соперника: ${r.opponent.hand_count}</p><p class="muted tiny">${r.skip ? '«Покур»: завершите ход, чтобы продолжить игру.' : 'Нажмите карту, чтобы разыграть её. Для атаки выберите своё существо, затем цель.'}</p></section><section class="panel log-panel"><h2>Последние события</h2><ul class="log">${[...r.log].reverse().slice(0,8).map(line => `<li>${esc(line)}</li>`).join('') || '<li>Партия начинается.</li>'}</ul></section></aside><section class="hand-area"><div class="hand-title"><h2>Ваша рука <span class="muted">· ${r.hand.length}</span></h2><span class="muted">${r.my_turn && !ended ? 'Карты с золотой рамкой доступны' : 'Планируйте следующий ход'}</span></div><div class="hand">${r.hand.map(cardMarkup).join('') || '<p class="muted">Карт в руке пока нет.</p>'}</div></section></div></section>`;
+  app.innerHTML = `<section class="game"><div class="game-heading"><div><span class="eyebrow">Офисный Гвинт</span><h1>${ended ? 'Партия завершена' : 'Перерыв затянулся.'}</h1></div><span class="pill">Комната <span class="code">${esc(r.code)}</span></span></div>${ended ? `<div class="result"><h2>${r.won ? 'Победа! 🏆' : 'В этот раз — за коллегой.'}</h2><p>${r.won ? '+20 монет. Отличная работа команды.' : 'Новая партия — новый шанс.'}</p><button id="back-lobby">В игровую</button></div>` : ''}<div class="game-layout"><section class="table" aria-label="Игровой стол">${hero('opponent',r.opponent)}<div class="board" aria-label="Существа соперника">${r.opponent.board.map(u => unitMarkup('opponent',u)).join('') || '<span class="empty-board">Соперник ещё никого не вызвал</span>'}</div><div class="divider"><span class="turn-label ${r.my_turn && !ended ? '' : 'wait'}">${ended ? 'КОНЕЦ ПАРТИИ' : r.my_turn ? (r.skip ? 'ПРОПУСК ХОДА · ПОКУР' : 'ВАШ ХОД') : 'ХОД СОПЕРНИКА'}</span></div><div class="board" aria-label="Ваши существа">${r.me.board.map(u => unitMarkup('me',u)).join('') || '<span class="empty-board">Ваша команда появится здесь</span>'}</div>${hero('me',r.me)}${selection ? `<div class="action-hint"><span>${selection.kind === 'attack' ? 'Выберите цель атаки' : 'Выберите подсвеченную цель'}</span><button id="cancel-selection" class="ghost">Отмена</button></div>` : ''}</section><aside class="sidebar"><section class="panel"><h2>${r.my_turn ? 'Ваше решение' : 'Ход коллеги'}</h2><button class="end-turn" id="end" ${!r.my_turn || ended ? 'disabled' : ''}>Завершить ход</button><button class="secondary hero-button" id="hero" ${!r.hero_ready || ended ? 'disabled' : ''}>${esc(heroLabel)}</button><button class="ghost hero-button" id="concede" ${ended ? 'disabled' : ''}>Сдаться</button></section><section class="panel"><h2>За столом</h2><p class="muted tiny">В вашей колоде: ${r.me.deck_count}<br>Карт у соперника: ${r.opponent.hand_count}</p><p class="muted tiny">${r.skip ? '«Покур»: завершите ход, чтобы продолжить игру.' : 'Нажмите карту, чтобы разыграть её. Для атаки выберите своё существо, затем цель.'}</p></section><section class="panel log-panel"><h2>Журнал боя</h2><ul class="log">${[...r.log].reverse().slice(0,8).map(line => `<li>${esc(line)}</li>`).join('') || '<li>Партия начинается.</li>'}</ul></section></aside><section class="hand-area"><div class="hand-title"><h2>Ваша рука <span class="muted">· ${r.hand.length}</span></h2><span class="muted">${r.my_turn && !ended ? 'Карты с золотой рамкой доступны' : 'Планируйте следующий ход'}</span></div><div class="hand">${r.hand.map(cardMarkup).join('') || '<p class="muted">Карт в руке пока нет.</p>'}</div></section></div></section>`;
   const action = data => mutate('/api/action', {version:r.version,...data});
   document.querySelector('#end').onclick = () => action({action:'end'});
   document.querySelector('#hero').onclick = () => action({action:'hero'});
@@ -379,18 +379,33 @@ async function openPack(id, button) {
   if (document.querySelector('#pack-reveal')) return;
   button.disabled=true;
   const dialog=document.createElement('dialog'); dialog.id='pack-reveal';
-  dialog.innerHTML=`<h2>Открываем пакетик…</h2><div class="pack-stage"><div class="pack-light"></div><img class="pack-art opening" src="/pack.svg" alt="Открывающийся пакетик"></div>`;
+  dialog.innerHTML=`<h2>Разорвите пакетик</h2><p class="muted" id="tear-hint">Проведите пальцем поперёк пакетика.</p><div class="pack-stage" id="tear-stage"><div class="pack-light"></div><div class="tear-packet"><img class="pack-half pack-half-top" src="/pack.svg" alt="Запечатанный пакетик"><img class="pack-half pack-half-bottom" src="/pack.svg" alt=""><span class="tear-line"></span></div></div><button id="tear-open">Разорвать пакетик</button><button class="ghost" id="tear-close">Позже</button>`;
   dialog.addEventListener('cancel',event=>{if(dialog.dataset.opening==='true')event.preventDefault();});
-  dialog.dataset.opening='true'; document.body.append(dialog);dialog.showModal();
-  try {
+  dialog.dataset.opening='false'; document.body.append(dialog);dialog.showModal();
+  let tearing=false, start=null;
+  const stage=dialog.querySelector('#tear-stage');
+  const haptic=()=>{try{const feedback=window.Telegram?.WebApp?.HapticFeedback;if(feedback)feedback.impactOccurred('medium');else if(navigator.vibrate)navigator.vibrate([25,30,45]);}catch(_){}};
+  dialog.addEventListener('close',()=>{dialog.remove();button.disabled=false;if(view==='packs')renderMenu();},{once:true});
+  dialog.querySelector('#tear-close').onclick=()=>dialog.close();
+  const tear=async()=>{
+    if(tearing)return;
+    tearing=true; dialog.dataset.opening='true';
+    dialog.querySelector('#tear-open').disabled=true;
+    dialog.querySelector('#tear-close').disabled=true;
+    dialog.querySelector('#tear-hint').textContent='Пакетик открывается…';
+    haptic(); stage.classList.add('torn');
+    try {
     const reward=await api('/api/packs/open',{id}); cardsData=null;deckCandidates=null;
-    const art=dialog.querySelector('.pack-art');
-    if (!matchMedia('(prefers-reduced-motion: reduce)').matches && art.animate) {
-      await art.animate([{transform:'rotate(-7deg) scale(1)'},{transform:'rotate(8deg) scale(1.08)',offset:.3},{transform:'rotate(-4deg) scale(1.12)',offset:.55},{transform:'scale(1.5)',opacity:0}],{duration:850,easing:'ease-in-out',fill:'forwards'}).finished;
-    }
+    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(!reduced) await new Promise(resolve=>setTimeout(resolve,450));
     dialog.dataset.opening='false';
     dialog.innerHTML=`<span class="eyebrow">Пакетик открыт</span><h2>${esc(reward.name)}</h2><p class="muted">Получено: ${cardCount(reward.cards.length)}. Добавлены в коллекцию.</p><div class="pack-rewards">${reward.cards.map((card,i)=>`<div class="reward-card ${card.legendary?'legendary-reward':''}"><div class="card painted-card">${paintedFace(card)}</div>${card.legendary?'<span>⭐ Легендарная</span>':''}</div>`).join('')}</div><button id="pack-done">В мои наборы</button>`;
     dialog.querySelector('#pack-done').onclick=()=>dialog.close();
-    dialog.addEventListener('close',()=>{dialog.remove();if(view==='packs')renderMenu();},{once:true});
-  } catch(e){dialog.close();dialog.remove();button.disabled=false;toast(e.message);}
+    } catch(e){dialog.dataset.opening='false';dialog.close();toast(e.message);}
+  };
+  dialog.querySelector('#tear-open').onclick=tear;
+  stage.addEventListener('pointerdown',event=>{if(tearing)return;start={x:event.clientX,y:event.clientY};stage.setPointerCapture(event.pointerId);});
+  stage.addEventListener('pointermove',event=>{if(!start||tearing)return;const dx=event.clientX-start.x,dy=event.clientY-start.y;const progress=Math.min(1,Math.abs(dx)/Math.min(130,stage.clientWidth*.35));stage.style.setProperty('--tear-progress',progress);if(progress>=1&&Math.abs(dx)>Math.abs(dy)){start=null;tear();}});
+  const reset=()=>{start=null;if(!tearing)stage.style.setProperty('--tear-progress',0);};
+  stage.addEventListener('pointerup',reset);stage.addEventListener('pointercancel',reset);
 }
