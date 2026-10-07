@@ -197,7 +197,7 @@ async function renderMenu() {
     try {
       const rows = (await api('/api/rating')).slice(0, 20);
       const medals = ['🥇','🥈','🥉'];
-      app.innerHTML = `<section class="lobby"><span class="eyebrow">Рейтинг</span><h1>Лидеры офиса.</h1>${back}<div class="panels"><ul class="log">${rows.map((x,i)=>`<li><b>${medals[i]||(i+1)+'.'} ${esc(x.name)}</b> — ${x.wins} побед · 🃏 ${x.cards} видов · ${x.copies} экз. в коллекции · 🪙 ${x.coins}${String(x.name)===String(p.name)?' · вы':''}</li>`).join('') || '<li class="muted">Пока нет игроков.</li>'}</ul></div></section>`;
+      app.innerHTML = `<section class="lobby"><span class="eyebrow">Рейтинг</span><h1>Лидеры офиса.</h1>${back}<div class="panels"><ul class="log">${rows.map((x,i)=>`<li><b>${medals[i]||(i+1)+'.'} ${esc(x.name)}</b> — ${x.wins} побед · 🃏 Разных карт: ${x.cards} · 🪙 ${x.coins}${String(x.name)===String(p.name)?' · вы':''}</li>`).join('') || '<li class="muted">Пока нет игроков.</li>'}</ul></div></section>`;
     } catch(e) { toast(e.message); return; }
   }
   bindMenuNav();
