@@ -74,7 +74,8 @@ class GameData:
             user['collection'] = result['collection']
             user['sets'] = result['sets']
             user_store.persist()
-            return True, f"✅ Промокод принят! Начислен набор: {result['name']}\nОсталось применений: {result['remaining']}"
+            suffix = '' if result['remaining'] is None else f"\nОсталось применений: {result['remaining']}"
+            return True, f"✅ Промокод принят! Начислен набор: {result['name']}" + suffix
 
         # ищем промокод без учёта регистра
         key = None
@@ -89,7 +90,7 @@ class GameData:
         uid = user_store.id_of(user)
         limit = promo.get('limit', 1)
         used_by = promo.get('used_by', [])
-        if len(used_by) >= limit:
+        if limit is not None and len(used_by) >= limit:
             return False, f"❌ Этот промокод уже использован (лимит {limit} игроков исчерпан)."
         if any(u.get('id') == uid for u in used_by):
             return False, "❌ Вы уже использовали этот промокод ранее."
@@ -103,8 +104,8 @@ class GameData:
             promo['used_by'] = used_by + [entry]
             user_store.persist()
             save("codes", self.codes)
-            remaining = limit - len(promo['used_by'])
-            return True, f"✅ Промокод принят! Начислен набор: {self.set_name(target)}\nОсталось применений: {remaining}"
+            suffix = '' if limit is None else f"\nОсталось применений: {limit - len(promo['used_by'])}"
+            return True, f"✅ Промокод принят! Начислен набор: {self.set_name(target)}" + suffix
 
         if promo.get('type') == 'card':
             if not self.grant_card(user, target, 1):
@@ -112,8 +113,8 @@ class GameData:
             promo['used_by'] = used_by + [entry]
             user_store.persist()
             save("codes", self.codes)
-            remaining = limit - len(promo['used_by'])
-            return True, f"✅ Промокод принят! Начислена карта: {self.card_name(target)}\nОсталось применений: {remaining}"
+            suffix = '' if limit is None else f"\nОсталось применений: {limit - len(promo['used_by'])}"
+            return True, f"✅ Промокод принят! Начислена карта: {self.card_name(target)}" + suffix
 
         return False, "❌ Неверный тип промокода."
 

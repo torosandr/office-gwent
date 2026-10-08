@@ -86,7 +86,8 @@ class Rewards:
             used |= {x['uid'] for x in db.execute('SELECT uid FROM promo_claims WHERE code=?', (canonical,))}
             if str(uid) in used:
                 raise WebError('Вы уже использовали этот промокод.')
-            if len(used) >= promo.get('limit', 1):
+            limit = promo.get('limit', 1)
+            if limit is not None and len(used) >= limit:
                 raise WebError('Лимит применений промокода исчерпан.')
             row = db.execute('SELECT uid FROM users WHERE uid=?', (uid,)).fetchone()
             if not row:
@@ -101,7 +102,7 @@ class Rewards:
             db.execute('INSERT INTO packs VALUES(?,?,?,?,?,?)', (pack_id, uid, target if promo.get('type') == 'set' else None, name, json.dumps(cards), int(immediate)))
             if immediate:
                 self._grant_pack(db, uid, p, cards, target if promo.get('type') == 'set' else None)
-        result = {'pack_id': pack_id, 'name': name, 'remaining': promo.get('limit', 1) - len(used) - 1}
+        result = {'pack_id': pack_id, 'name': name, 'remaining': None if limit is None else limit - len(used) - 1}
         if immediate:
             result['collection'] = p['collection']
             result['sets'] = p.get('sets', [])
